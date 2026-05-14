@@ -1,0 +1,51 @@
+@page "/trips/{Id:int}/diversion"
+@attribute [Authorize]
+@inject ApiClient Api
+@inject GeolocationService Geo
+@inject NavigationManager Nav
+
+<PageTitle>Request diversion</PageTitle>
+
+<h1>Request diversion</h1>
+<p class="muted">Trip @Id</p>
+
+<div class="card">
+    <div class="field">
+        <label>Reason for diversion</label>
+        <textarea class="input" rows="3" @bind="reason"></textarea>
+    </div>
+    <div class="field">
+        <label>New destination</label>
+        <input class="input" @bind="newDest" placeholder="e.g. Makeni Hospital" />
+    </div>
+    <div class="field">
+        <label><input type="checkbox" @bind="emergency" /> This is an emergency (medical / roadblock / accident)</label>
+    </div>
+    @if (!string.IsNullOrEmpty(message)) { <p class="status">@message</p> }
+    @if (!string.IsNullOrEmpty(error)) { <p class="error">@error</p> }
+    <button class="btn primary" @onclick="Submit" disabled="@(busy || string.IsNullOrWhiteSpace(reason))">
+        @(busy ? "Submitting…" : (emergency ? "Submit emergency diversion" : "Request diversion approval"))
+    </button>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    string? reason;
+    string? newDest;
+    bool emergency;
+    bool busy;
+    string? message;
+    string? error;
+
+    async Task Submit()
+    {
+        busy = true; error = null; message = null;
+        var pos = await Geo.GetCurrentAsync();
+        var ok = await Api.RequestDiversionAsync(new DiversionRequest(Id, reason!, pos?.Lat, pos?.Lng, newDest, emergency));
+        busy = false;
+        if (!ok) { error = "Failed to submit. Try again when online."; return; }
+        message = "Diversion submitted ✓";
+        await Task.Delay(800);
+        Nav.NavigateTo($"/trips/{Id}");
+    }
+}

@@ -1,0 +1,73 @@
+@page "/admin/users"
+@model AvdpSmartFleet.Api.Pages.Admin.UsersModel
+@{ ViewData["Title"] = "Users"; }
+
+<h1>Users</h1>
+@if (!string.IsNullOrEmpty(Model.Message)) { <p class="status">@Model.Message</p> }
+@if (!string.IsNullOrEmpty(Model.Error)) { <p class="error">@Model.Error</p> }
+
+<div class="card">
+    <h2>Add user</h2>
+    <form method="post" asp-page-handler="Create">
+        <div class="field">
+            <label>Full name</label>
+            <input class="input" name="fullName" required />
+        </div>
+        <div class="field">
+            <label>Email</label>
+            <input class="input" type="email" name="email" required />
+        </div>
+        <div class="field">
+            <label>Phone</label>
+            <input class="input" name="phone" />
+        </div>
+        <div class="field">
+            <label>Role</label>
+            <select class="input" name="role">
+                <option value="1">Requester</option>
+                <option value="2">Driver</option>
+                <option value="3">FleetOfficer</option>
+                <option value="4">Manager</option>
+                <option value="5">GateOfficer</option>
+                <option value="6">Auditor</option>
+                <option value="7">Admin</option>
+            </select>
+        </div>
+        <div class="field">
+            <label>Department</label>
+            <input class="input" name="department" />
+        </div>
+        <div class="field">
+            <label>Initial password</label>
+            <input class="input" type="text" name="password" required minlength="6" />
+        </div>
+        <button class="btn" type="submit">Create user</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>All users</h2>
+    <table>
+        <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Department</th><th>Status</th><th>Last login</th><th></th></tr></thead>
+        <tbody>
+        @foreach (var u in Model.Items)
+        {
+            <tr>
+                <td>@u.FullName</td>
+                <td>@u.Email</td>
+                <td><span class="badge">@u.Role</span></td>
+                <td>@u.Department</td>
+                <td>@(u.IsActive ? "Active" : "Disabled")</td>
+                <td>@(u.LastLoginAt?.ToString("yyyy-MM-dd HH:mm") ?? "—")</td>
+                <td>
+                    <form method="post" asp-page-handler="Toggle" asp-route-id="@u.Id" style="display:inline">
+                        <button class="btn" type="submit" style="padding:4px 10px;font-size:0.8rem">
+                            @(u.IsActive ? "Disable" : "Enable")
+                        </button>
+                    </form>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

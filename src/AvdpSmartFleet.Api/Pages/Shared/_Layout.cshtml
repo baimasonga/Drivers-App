@@ -1,0 +1,36 @@
+@{
+    var title = ViewData["Title"] as string ?? "AVDP SmartFleet";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@title — AVDP SmartFleet</title>
+    <link rel="stylesheet" href="/admin.css" />
+</head>
+<body>
+<header>
+    <div class="brand">
+        <strong>AVDP SmartFleet</strong> <span class="muted">Logbook</span>
+    </div>
+    <nav>
+        <a href="/admin">Dashboard</a>
+        <a href="/admin/requests">Travel Requests</a>
+        <a href="/admin/vehicles">Vehicles</a>
+        <a href="/admin/drivers">Drivers</a>
+        <a href="/admin/geofences">Geofences</a>
+        <a href="/admin/exceptions">Exceptions</a>
+        <a href="/admin/users">Users</a>
+        <a href="/admin/reports">Reports</a>
+        <a href="/swagger" target="_blank">API</a>
+    </nav>
+</header>
+<main>
+    @RenderBody()
+</main>
+<footer>
+    <span class="muted">AVDP SmartFleet Logbook · MVP build</span>
+</footer>
+</body>
+</html>

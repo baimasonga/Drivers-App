@@ -1,0 +1,13 @@
+@page "/admin/reports"
+@{ ViewData["Title"] = "Reports"; }
+
+<h1>Reports</h1>
+<p class="muted">Export operational data for audit and management review.</p>
+
+<div class="card">
+    <h2>Downloads</h2>
+    <p><a class="btn" href="/api/reports/trips.csv" download>Trips (CSV)</a></p>
+    <p><a class="btn" href="/api/reports/exceptions.csv" download>Exceptions (CSV)</a></p>
+    <p><a class="btn" href="/api/reports/vehicle-utilization.csv" download>Vehicle utilization, last 30 days (CSV)</a></p>
+    <p class="muted">Date filters: append <code>?from=YYYY-MM-DD&amp;to=YYYY-MM-DD</code> to the URL.</p>
+</div>

@@ -1,0 +1,21 @@
+@page "/admin/exceptions"
+@model AvdpSmartFleet.Api.Pages.Admin.ExceptionsModel
+@{ ViewData["Title"] = "Exceptions"; }
+<h1>Trip Exceptions</h1>
+<div class="card">
+    <table>
+        <thead><tr><th>Trip</th><th>Type</th><th>Status</th><th>Description</th><th>Detected</th></tr></thead>
+        <tbody>
+        @foreach (var e in Model.Items)
+        {
+            <tr>
+                <td><a href="/admin/requests/@e.TripId">@e.TripCode</a></td>
+                <td>@e.Type</td>
+                <td><span class="badge @(e.Status == "Open" ? "bad" : "")">@e.Status</span></td>
+                <td>@e.Description</td>
+                <td>@e.DetectedAt.ToString("yyyy-MM-dd HH:mm")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

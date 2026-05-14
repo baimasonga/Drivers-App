@@ -1,0 +1,28 @@
+@page "/admin/requests"
+@model AvdpSmartFleet.Api.Pages.Admin.RequestsModel
+@{ ViewData["Title"] = "Travel Requests"; }
+
+<h1>Travel Requests <a class="btn" href="/admin/requests/new" style="font-size:0.85rem;float:right">+ New request</a></h1>
+<div class="card">
+    <table>
+        <thead>
+            <tr><th>Code</th><th>Requester</th><th>Department</th><th>Purpose</th><th>Departure</th><th>Vehicle</th><th>Driver</th><th>Status</th><th>Score</th></tr>
+        </thead>
+        <tbody>
+        @foreach (var r in Model.Items)
+        {
+            <tr>
+                <td><a href="/admin/requests/@r.Id">@r.Code</a></td>
+                <td>@r.Requester</td>
+                <td>@r.Department</td>
+                <td>@r.Purpose</td>
+                <td>@r.PlannedDeparture.ToString("yyyy-MM-dd HH:mm")</td>
+                <td>@(r.Vehicle ?? "—")</td>
+                <td>@(r.Driver ?? "—")</td>
+                <td><span class="badge">@r.Status</span></td>
+                <td>@(r.Score.HasValue ? r.Score.Value.ToString("F0") : "—")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

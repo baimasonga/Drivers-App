@@ -1,0 +1,52 @@
+@page "/"
+@attribute [Authorize]
+@inject ApiClient Api
+@inject OfflineQueue Queue
+
+<PageTitle>My trips</PageTitle>
+
+<h1>My trips</h1>
+
+@if (pending > 0)
+{
+    <div class="banner warn">
+        <span>@pending queued log(s) pending sync</span>
+        <button class="link" @onclick="Flush">Sync now</button>
+    </div>
+}
+
+@if (trips == null) { <p class="muted">Loading…</p> }
+else if (trips.Count == 0) { <p class="muted">No active assignments.</p> }
+else
+{
+    @foreach (var t in trips)
+    {
+        <a class="trip-card" href="@($"/trips/{t.Id}")">
+            <div class="trip-code">@t.RequestCode</div>
+            <div class="trip-purpose">@t.Purpose</div>
+            <div class="trip-meta">
+                <span>@t.Vehicle</span> · <span>@(t.Destination ?? "—")</span>
+            </div>
+            <div class="trip-times">@t.PlannedDeparture.ToString("ddd HH:mm") → @t.PlannedReturn.ToString("ddd HH:mm")</div>
+            <span class="badge">@t.Status</span>
+        </a>
+    }
+}
+
+@code {
+    List<TripAssignment>? trips;
+    int pending;
+
+    protected override async Task OnInitializedAsync()
+    {
+        trips = await Api.GetMyAssignmentsAsync();
+        pending = await Queue.PendingCountAsync();
+    }
+
+    async Task Flush()
+    {
+        await Queue.FlushAsync();
+        pending = await Queue.PendingCountAsync();
+        trips = await Api.GetMyAssignmentsAsync();
+    }
+}

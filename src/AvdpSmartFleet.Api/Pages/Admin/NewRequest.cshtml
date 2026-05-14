@@ -1,0 +1,67 @@
+@page "/admin/requests/new"
+@model AvdpSmartFleet.Api.Pages.Admin.NewRequestModel
+@{ ViewData["Title"] = "New Travel Request"; }
+
+<h1>New Travel Request</h1>
+
+@if (!string.IsNullOrEmpty(Model.Error)) { <p class="error">@Model.Error</p> }
+@if (!string.IsNullOrEmpty(Model.Created)) { <p class="status">@Model.Created</p> }
+
+<div class="card">
+    <form method="post">
+        <div class="field">
+            <label>Requester</label>
+            <select name="RequesterId" class="input">
+                @foreach (var u in Model.Requesters)
+                {
+                    <option value="@u.Id">@u.Name (@u.Department)</option>
+                }
+            </select>
+        </div>
+        <div class="field">
+            <label>Purpose</label>
+            <input class="input" name="Purpose" required />
+        </div>
+        <div class="field">
+            <label>Destination</label>
+            <select name="DestinationGeofenceId" class="input">
+                <option value="">— Pick a registered destination —</option>
+                @foreach (var g in Model.Geofences)
+                {
+                    <option value="@g.Id">@g.Name (@g.Category)</option>
+                }
+            </select>
+        </div>
+        <div class="field">
+            <label>Destination district (free text)</label>
+            <input class="input" name="DestinationDistrict" />
+        </div>
+        <div class="field">
+            <label>Planned departure</label>
+            <input class="input" type="datetime-local" name="PlannedDeparture" required />
+        </div>
+        <div class="field">
+            <label>Planned return</label>
+            <input class="input" type="datetime-local" name="PlannedReturn" required />
+        </div>
+        <div class="field">
+            <label>Vehicle type</label>
+            <select name="RequestedVehicleType" class="input">
+                <option>Pickup</option>
+                <option>SUV</option>
+                <option>Truck</option>
+                <option>Motorbike</option>
+            </select>
+        </div>
+        <div class="field">
+            <label>Priority</label>
+            <select name="Priority" class="input">
+                <option value="0">Normal</option>
+                <option value="1">Urgent</option>
+                <option value="2">Emergency</option>
+            </select>
+        </div>
+        <button class="btn" type="submit">Submit Request</button>
+        <a class="muted" href="/admin/requests" style="margin-left:12px">Cancel</a>
+    </form>
+</div>

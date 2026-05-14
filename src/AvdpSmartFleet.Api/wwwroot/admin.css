@@ -1,0 +1,46 @@
+:root {
+    --green: #1b6e2a;
+    --green-dark: #134d1e;
+    --muted: #6b7280;
+    --bg: #f5f7f4;
+    --border: #d6dad3;
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: #111;
+}
+header {
+    background: var(--green);
+    color: white;
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+header .brand { font-size: 1.1rem; }
+header .muted { opacity: 0.75; font-weight: normal; }
+header nav { display: flex; gap: 16px; margin-left: auto; }
+header nav a { color: white; text-decoration: none; font-size: 0.95rem; opacity: 0.9; }
+header nav a:hover { opacity: 1; text-decoration: underline; }
+main { max-width: 1200px; margin: 24px auto; padding: 0 24px; }
+footer { text-align: center; padding: 24px; color: var(--muted); font-size: 0.85rem; }
+h1 { margin-top: 0; }
+.card { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 16px; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
+.kpi { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+.kpi .label { color: var(--muted); font-size: 0.85rem; }
+.kpi .value { font-size: 1.8rem; font-weight: 600; color: var(--green-dark); }
+table { width: 100%; border-collapse: collapse; background: white; }
+table th, table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+table th { background: #eef1ec; color: var(--green-dark); }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; background: #eef1ec; color: var(--green-dark); }
+.badge.warn { background: #fff4e0; color: #8a5a00; }
+.badge.bad { background: #fce4e4; color: #a82020; }
+.muted { color: var(--muted); }
+.btn { display: inline-block; padding: 6px 12px; border-radius: 4px; background: var(--green); color: white; text-decoration: none; font-size: 0.85rem; border: 0; cursor: pointer; }
+.login-card { max-width: 360px; margin: 60px auto; }
+.login-card input { display: block; width: 100%; padding: 8px; margin-bottom: 12px; border: 1px solid var(--border); border-radius: 4px; }
+.login-card button { width: 100%; padding: 10px; }

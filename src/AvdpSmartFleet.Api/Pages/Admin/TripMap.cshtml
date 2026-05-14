@@ -1,0 +1,46 @@
+@page "/admin/requests/{id:int}/map"
+@{ ViewData["Title"] = "Trip map"; }
+
+<h1>Trip route map</h1>
+<p><a href="/admin/requests/@RouteData.Values["id"]">← Back to trip</a></p>
+
+<div id="map" style="height: 70vh; border-radius: 8px; border: 1px solid var(--border);"></div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    (async () => {
+        const tripId = @RouteData.Values["id"];
+        const r = await fetch(`/api/map/trip/${tripId}/positions`);
+        const data = await r.json();
+        const map = L.map('map').setView([8.4844, -13.2344], 8);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18, attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        if (data.destination) {
+            L.circle([data.destination.lat, data.destination.lng], {
+                radius: data.destination.radius, color: '#1b6e2a', fillOpacity: 0.15
+            }).bindPopup('Approved destination: ' + data.destination.name).addTo(map);
+        }
+
+        if (data.positions && data.positions.length > 0) {
+            const latlngs = data.positions.map(p => [p.lat, p.lng]);
+            L.polyline(latlngs, { color: '#134d1e', weight: 4 }).addTo(map);
+            map.fitBounds(latlngs);
+            L.marker(latlngs[0]).bindPopup('Start').addTo(map);
+            L.marker(latlngs[latlngs.length - 1]).bindPopup('Latest').addTo(map);
+        }
+
+        (data.driverLogs || []).forEach(l => {
+            L.marker([l.lat, l.lng], {
+                icon: L.divIcon({ className: 'driver-marker', html: '📍', iconSize: [24, 24] })
+            }).bindPopup(`${l.eventType} · ${new Date(l.eventAt).toLocaleString()}`).addTo(map);
+        });
+
+        if (!data.positions || data.positions.length === 0) {
+            document.getElementById('map').insertAdjacentHTML('afterend',
+                '<p class="muted">No GPS positions recorded yet for this trip.</p>');
+        }
+    })();
+</script>

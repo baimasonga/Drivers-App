@@ -1,0 +1,20 @@
+@page "/admin/geofences"
+@model AvdpSmartFleet.Api.Pages.Admin.GeofencesModel
+@{ ViewData["Title"] = "Geofences"; }
+<h1>Geofences</h1>
+<div class="card">
+    <table>
+        <thead><tr><th>Name</th><th>Category</th><th>Center</th><th>Radius</th><th>Provisional</th></tr></thead>
+        <tbody>
+        @foreach (var g in Model.Items)
+        {
+            <tr>
+                <td>@g.Name</td><td>@g.Category</td>
+                <td>@g.Lat.ToString("F4"), @g.Lng.ToString("F4")</td>
+                <td>@g.Radius m</td>
+                <td>@(g.Provisional ? "Yes" : "No")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

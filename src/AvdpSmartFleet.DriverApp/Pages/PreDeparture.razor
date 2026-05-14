@@ -1,0 +1,68 @@
+@page "/trips/{Id:int}/pre-departure"
+@attribute [Authorize]
+@inject ApiClient Api
+@inject OfflineQueue Queue
+@inject GeolocationService Geo
+@inject NavigationManager Nav
+
+<PageTitle>Pre-departure</PageTitle>
+
+<h1>Pre-departure checklist</h1>
+<p class="muted">Trip @Id</p>
+
+<div class="card">
+    <div class="field">
+        <label><input type="checkbox" @bind="bodyOk" /> Vehicle body in good condition</label>
+    </div>
+    <div class="field">
+        <label><input type="checkbox" @bind="fuelOk" /> Fuel level adequate</label>
+    </div>
+    <div class="field">
+        <label><input type="checkbox" @bind="tyresOk" /> Tyres checked</label>
+    </div>
+    <div class="field">
+        <label><input type="checkbox" @bind="lightsOk" /> Lights checked</label>
+    </div>
+    <div class="field">
+        <label><input type="checkbox" @bind="spareOk" /> Spare tyre and jack present</label>
+    </div>
+    <div class="field">
+        <label>Starting odometer (km)</label>
+        <input class="input" type="number" @bind="odometer" />
+    </div>
+    <div class="field">
+        <label>Notes (optional)</label>
+        <input class="input" @bind="notes" />
+    </div>
+
+    @if (!string.IsNullOrEmpty(message)) { <p class="status">@message</p> }
+
+    <button class="btn primary" @onclick="Submit" disabled="@(!Ready)">
+        @(busy ? "Saving…" : "Submit checklist")
+    </button>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    bool bodyOk, fuelOk, tyresOk, lightsOk, spareOk;
+    int? odometer;
+    string? notes;
+    string? message;
+    bool busy;
+
+    bool Ready => bodyOk && fuelOk && tyresOk && lightsOk && odometer.HasValue && !busy;
+
+    async Task Submit()
+    {
+        busy = true; message = null;
+        var pos = await Geo.GetCurrentAsync();
+        var summary = $"Pre-departure checklist: body={bodyOk}, fuel={fuelOk}, tyres={tyresOk}, lights={lightsOk}, spare={spareOk}; notes={notes}";
+        var req = new TripLogRequest(Id, "PreDeparture", pos?.Lat, pos?.Lng, summary, odometer,
+            Guid.NewGuid().ToString(), DateTime.UtcNow);
+        await Queue.EnqueueOrSendAsync(req);
+        message = "Checklist submitted ✓";
+        busy = false;
+        await Task.Delay(800);
+        Nav.NavigateTo($"/trips/{Id}");
+    }
+}

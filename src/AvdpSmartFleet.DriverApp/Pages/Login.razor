@@ -1,0 +1,42 @@
+@page "/login"
+@layout Layout.MainLayout
+@inject ApiClient Api
+@inject AuthState Auth
+@inject NavigationManager Nav
+
+<PageTitle>Sign in</PageTitle>
+
+<div class="card">
+    <h1>Sign in</h1>
+    <p class="muted">AVDP SmartFleet Driver</p>
+
+    <EditForm Model="this" OnValidSubmit="DoLogin">
+        <div class="field">
+            <label>Email or phone</label>
+            <input class="input" @bind="email" placeholder="driver@avdp.sl" />
+        </div>
+        <div class="field">
+            <label>Password / PIN</label>
+            <input class="input" type="password" @bind="password" />
+        </div>
+        @if (!string.IsNullOrEmpty(error)) { <p class="error">@error</p> }
+        <button class="btn primary" type="submit" disabled="@busy">@(busy ? "Signing in…" : "Sign in")</button>
+    </EditForm>
+</div>
+
+@code {
+    string email = "";
+    string password = "";
+    string? error;
+    bool busy;
+
+    async Task DoLogin()
+    {
+        busy = true; error = null;
+        var resp = await Api.LoginAsync(email, password);
+        busy = false;
+        if (resp == null) { error = "Invalid credentials"; return; }
+        await Auth.SignInAsync(resp.Token, resp.FullName, resp.Role);
+        Nav.NavigateTo("/");
+    }
+}

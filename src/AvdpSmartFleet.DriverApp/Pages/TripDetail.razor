@@ -1,0 +1,56 @@
+@page "/trips/{Id:int}"
+@attribute [Authorize]
+@inject ApiClient Api
+@inject OfflineQueue Queue
+@inject GeolocationService Geo
+
+<PageTitle>Trip @Id</PageTitle>
+
+@if (trip == null) { <p class="muted">Loading…</p> }
+else
+{
+    <h1>@trip.RequestCode</h1>
+    <div class="trip-meta">
+        <span class="badge">@trip.Status</span>
+        <span>@trip.Vehicle</span> · <span>@(trip.Destination ?? "—")</span>
+    </div>
+    <p>@trip.Purpose</p>
+
+    <div class="action-grid">
+        <a class="btn" href="@($"/trips/{Id}/pre-departure")">Pre-departure check</a>
+        <button class="btn primary" @onclick='() => Log("Departed")'>Departed</button>
+        <button class="btn" @onclick='() => Log("Arrived")'>Arrived</button>
+        <button class="btn" @onclick='() => Log("Stopped")'>Stopped</button>
+        <button class="btn" @onclick='() => Log("Issue")'>Vehicle issue</button>
+        <a class="btn" href="@($"/trips/{Id}/diversion")">Request diversion</a>
+        <button class="btn" @onclick='() => Log("Returning")'>Returning</button>
+    </div>
+
+    @if (!string.IsNullOrEmpty(message))
+    {
+        <p class="status">@message</p>
+    }
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+    TripAssignment? trip;
+    string? message;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var list = await Api.GetMyAssignmentsAsync();
+        trip = list?.FirstOrDefault(t => t.Id == Id);
+    }
+
+    async Task Log(string eventType)
+    {
+        message = "Capturing location…";
+        StateHasChanged();
+        var pos = await Geo.GetCurrentAsync();
+        var req = new TripLogRequest(Id, eventType, pos?.Lat, pos?.Lng, null, null,
+            Guid.NewGuid().ToString(), DateTime.UtcNow);
+        await Queue.EnqueueOrSendAsync(req);
+        message = $"{eventType} logged ✓";
+    }
+}

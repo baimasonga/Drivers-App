@@ -1,0 +1,24 @@
+@inherits LayoutComponentBase
+@inject AuthState Auth
+@inject NavigationManager Nav
+
+<div class="app">
+    <header class="app-header">
+        <div class="brand">AVDP Driver</div>
+        <AuthorizeView>
+            <Authorized>
+                <span class="user">@Auth.UserName</span>
+                <button class="link" @onclick="LogoutAsync">Log out</button>
+            </Authorized>
+        </AuthorizeView>
+    </header>
+    <main>@Body</main>
+</div>
+
+@code {
+    private async Task LogoutAsync()
+    {
+        await Auth.SignOutAsync();
+        Nav.NavigateTo("/login", true);
+    }
+}

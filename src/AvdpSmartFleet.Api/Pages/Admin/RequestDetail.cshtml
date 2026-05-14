@@ -1,0 +1,163 @@
+@page "/admin/requests/{id:int}"
+@model AvdpSmartFleet.Api.Pages.Admin.RequestDetailModel
+@{ ViewData["Title"] = "Trip " + Model.Trip?.Code; }
+
+@if (Model.Trip == null)
+{
+    <p>Not found.</p>
+}
+else
+{
+    <h1>@Model.Trip.Code <a class="btn" href="/admin/requests/@Model.Trip.Id/map" style="font-size:0.8rem;float:right">View map</a></h1>
+    <p>
+        <span class="badge">@Model.Trip.Status</span>
+        @if (Model.Trip.Score.HasValue) { <span class="badge">Compliance @Model.Trip.Score.Value.ToString("F0")%</span> }
+    </p>
+    @if (!string.IsNullOrEmpty(Model.Message)) { <p class="status">@Model.Message</p> }
+
+    <div class="card">
+        <h2>Itinerary</h2>
+        <p><strong>Purpose:</strong> @Model.Trip.Purpose</p>
+        <p><strong>Requester:</strong> @Model.Trip.Requester (@Model.Trip.Department)</p>
+        <p><strong>Destination:</strong> @Model.Trip.Destination</p>
+        <p><strong>Vehicle:</strong> @(Model.Trip.Vehicle ?? "—")
+           <strong>Driver:</strong> @(Model.Trip.Driver ?? "—")</p>
+        <p><strong>Planned:</strong> @Model.Trip.PlannedDeparture.ToString("yyyy-MM-dd HH:mm") → @Model.Trip.PlannedReturn.ToString("yyyy-MM-dd HH:mm")</p>
+        @if (Model.Trip.StartedAt.HasValue)
+        {
+            <p><strong>Actual:</strong> @Model.Trip.StartedAt.Value.ToString("yyyy-MM-dd HH:mm") → @(Model.Trip.CompletedAt?.ToString("yyyy-MM-dd HH:mm") ?? "in progress")</p>
+        }
+    </div>
+
+    @if (Model.Trip.Status == "PendingFleetReview" || Model.Trip.Status == "PendingApproval")
+    {
+        <div class="card">
+            <h2>Assign vehicle &amp; driver</h2>
+            <form method="post" asp-page-handler="Assign" asp-route-id="@Model.Trip.Id">
+                <div class="field">
+                    <label>Vehicle</label>
+                    <select name="vehicleId" class="input" required>
+                        @foreach (var v in Model.Vehicles) { <option value="@v.Id" selected="@(v.Id == Model.Trip.VehicleId)">@v.Plate</option> }
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Driver</label>
+                    <select name="driverId" class="input" required>
+                        @foreach (var d in Model.Drivers) { <option value="@d.Id" selected="@(d.Id == Model.Trip.DriverId)">@d.Name</option> }
+                    </select>
+                </div>
+                <button class="btn" type="submit">Assign</button>
+            </form>
+        </div>
+    }
+
+    @if (Model.Trip.Status == "PendingApproval")
+    {
+        <div class="card">
+            <h2>Manager decision</h2>
+            <form method="post" asp-page-handler="Approve" asp-route-id="@Model.Trip.Id">
+                <div class="field">
+                    <label>Rejection reason (if rejecting)</label>
+                    <input class="input" name="reason" />
+                </div>
+                <button class="btn" type="submit" name="action" value="approve">Approve</button>
+                <button class="btn" type="submit" name="action" value="reject" style="background:#fce4e4;color:#a82020;border-color:#fab2b2">Reject</button>
+            </form>
+        </div>
+    }
+
+    @if (Model.Trip.Status == "PendingVerification")
+    {
+        <div class="card">
+            <h2>Fleet officer verification</h2>
+            <form method="post" asp-page-handler="Verify" asp-route-id="@Model.Trip.Id">
+                <div class="field">
+                    <label>Note (optional)</label>
+                    <input class="input" name="note" />
+                </div>
+                <button class="btn" type="submit" name="action" value="verify">Verify</button>
+                <button class="btn" type="submit" name="action" value="query">Query driver</button>
+            </form>
+        </div>
+    }
+
+    @if (Model.Trip.Status == "Verified" || Model.Trip.Status == "Queried")
+    {
+        <div class="card">
+            <form method="post" asp-page-handler="Close" asp-route-id="@Model.Trip.Id">
+                <button class="btn" type="submit">Close trip</button>
+            </form>
+        </div>
+    }
+
+    @if (Model.Trip.CompletedAt.HasValue)
+    {
+        <div class="card">
+            <form method="post" asp-page-handler="Reconcile" asp-route-id="@Model.Trip.Id">
+                <button class="btn" type="submit">Re-run reconciliation</button>
+            </form>
+        </div>
+    }
+
+    <div class="card">
+        <h2>Driver Logs</h2>
+        @if (Model.Logs.Count == 0) { <p class="muted">No logs yet.</p> }
+        else
+        {
+            <table>
+                <thead><tr><th>Time</th><th>Event</th><th>Location</th><th>Odometer</th><th>Notes</th></tr></thead>
+                <tbody>
+                @foreach (var l in Model.Logs)
+                {
+                    <tr>
+                        <td>@l.EventAt.ToString("yyyy-MM-dd HH:mm")</td>
+                        <td>@l.EventType</td>
+                        <td>@(l.Lat.HasValue ? $"{l.Lat:F4}, {l.Lng:F4}" : "—")</td>
+                        <td>@(l.Odometer?.ToString("N0") ?? "—")</td>
+                        <td>@l.Notes</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        }
+    </div>
+
+    <div class="card">
+        <h2>Gate Events</h2>
+        @if (Model.Gates.Count == 0) { <p class="muted">No gate events.</p> }
+        else
+        {
+            <table>
+                <thead><tr><th>Time</th><th>Action</th><th>Odometer</th></tr></thead>
+                <tbody>
+                @foreach (var g in Model.Gates)
+                {
+                    <tr><td>@g.At.ToString("yyyy-MM-dd HH:mm")</td><td>@g.Action</td><td>@(g.Odo?.ToString("N0") ?? "—")</td></tr>
+                }
+                </tbody>
+            </table>
+        }
+    </div>
+
+    <div class="card">
+        <h2>Exceptions</h2>
+        @if (Model.Exceptions.Count == 0) { <p class="muted">No exceptions detected.</p> }
+        else
+        {
+            <table>
+                <thead><tr><th>Type</th><th>Status</th><th>Description</th><th>Driver explanation</th></tr></thead>
+                <tbody>
+                @foreach (var e in Model.Exceptions)
+                {
+                    <tr>
+                        <td>@e.Type</td>
+                        <td><span class="badge @(e.Status == "Open" ? "bad" : "")">@e.Status</span></td>
+                        <td>@e.Description</td>
+                        <td>@(e.Explanation ?? "—")</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        }
+    </div>
+}
