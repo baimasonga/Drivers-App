@@ -39,7 +39,8 @@ public record TripLogRequest(
     string? Notes,
     int? OdometerReading,
     string? LocalUuid,
-    DateTime? EventAt);
+    DateTime? EventAt,
+    string? PhotoUrl = null);
 
 public record CreateGeofenceRequest(string Name, string? Category, double CenterLat, double CenterLng, int RadiusMeters);
 public record CreateVehicleRequest(string PlateNumber, string Make, string Model, string Type, string? HomeBase, int? GpsUnitId);

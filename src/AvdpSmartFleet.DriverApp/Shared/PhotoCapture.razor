@@ -1,0 +1,62 @@
+@inject ApiClient Api
+
+<div class="field">
+    <label>@Label</label>
+    @if (!string.IsNullOrEmpty(uploadedUrl))
+    {
+        <div class="photo-preview">
+            <img src="@(BaseUrl + uploadedUrl)" alt="Captured photo" />
+            <button class="link" @onclick="Clear" type="button">Remove</button>
+        </div>
+    }
+    else
+    {
+        <InputFile OnChange="OnFileChosen" accept="image/*" capture="environment" class="input" />
+        @if (busy) { <p class="muted">Uploading…</p> }
+        @if (!string.IsNullOrEmpty(error)) { <p class="error">@error</p> }
+    }
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "Photo";
+    [Parameter] public string? BaseUrl { get; set; }
+    [Parameter] public EventCallback<string?> OnUploaded { get; set; }
+
+    string? uploadedUrl;
+    string? error;
+    bool busy;
+
+    async Task OnFileChosen(InputFileChangeEventArgs e)
+    {
+        error = null; busy = true; StateHasChanged();
+        try
+        {
+            var file = e.File;
+            if (file.Size > 5 * 1024 * 1024) { error = "Photo too large (max 5 MB)"; return; }
+            // Resize to max 1600px on long edge to keep upload small in low-bandwidth areas
+            var resized = await file.RequestImageFileAsync("image/jpeg", 1600, 1600);
+            using var stream = resized.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+            var result = await Api.UploadPhotoAsync(stream, file.Name, "image/jpeg");
+            if (result == null) { error = "Upload failed"; return; }
+            uploadedUrl = result.Url;
+            await OnUploaded.InvokeAsync(uploadedUrl);
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+        finally { busy = false; StateHasChanged(); }
+    }
+
+    async Task Clear()
+    {
+        uploadedUrl = null;
+        await OnUploaded.InvokeAsync(null);
+    }
+}
+
+<style>
+.photo-preview { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.photo-preview img { max-width: 100%; max-height: 240px; border-radius: 8px; border: 1px solid var(--border); }
+.photo-preview .link { background: transparent; border: 0; color: var(--error); cursor: pointer; text-decoration: underline; padding: 0; }
+</style>

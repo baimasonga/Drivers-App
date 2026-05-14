@@ -19,7 +19,7 @@ public class RequestDetailModel : PageModel
     public record TripDto(int Id, string Code, string Status, string Purpose, string Requester, string? Department,
         string? Destination, string? Vehicle, int? VehicleId, string? Driver, int? DriverId,
         DateTime PlannedDeparture, DateTime PlannedReturn, DateTime? StartedAt, DateTime? CompletedAt, double? Score);
-    public record LogDto(DateTime EventAt, string EventType, double? Lat, double? Lng, int? Odometer, string? Notes);
+    public record LogDto(DateTime EventAt, string EventType, double? Lat, double? Lng, int? Odometer, string? Notes, string? PhotoUrl);
     public record GateDto(DateTime At, string Action, int? Odo);
     public record ExDto(int Id, string Type, string Status, string Description, string? Explanation);
     public record VehicleOpt(int Id, string Plate);
@@ -135,7 +135,7 @@ public class RequestDetailModel : PageModel
             t.PlannedDeparture, t.PlannedReturn, t.StartedAt, t.CompletedAt, t.ComplianceScore);
 
         Logs = t.TripLogs.OrderBy(l => l.EventAt)
-            .Select(l => new LogDto(l.EventAt, l.EventType, l.PhoneLat, l.PhoneLng, l.OdometerReading, l.Notes))
+            .Select(l => new LogDto(l.EventAt, l.EventType, l.PhoneLat, l.PhoneLng, l.OdometerReading, l.Notes, l.PhotoUrl))
             .ToList();
         Gates = t.GateClearances.OrderBy(g => g.EventAt)
             .Select(g => new GateDto(g.EventAt, g.Action.ToString(), g.OdometerReading))

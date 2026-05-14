@@ -8,11 +8,27 @@
 }
 else
 {
-    <h1>@Model.Trip.Code <a class="btn" href="/admin/requests/@Model.Trip.Id/map" style="font-size:0.8rem;float:right">View map</a></h1>
-    <p>
-        <span class="badge">@Model.Trip.Status</span>
-        @if (Model.Trip.Score.HasValue) { <span class="badge">Compliance @Model.Trip.Score.Value.ToString("F0")%</span> }
-    </p>
+    <div class="row between" style="margin-bottom:18px">
+        <div class="row" style="gap:12px">
+            <h2 style="margin:0">@Model.Trip.Code</h2>
+            @{
+                string statusBadge = Model.Trip.Status switch
+                {
+                    "Closed" or "Verified" => "success",
+                    "Rejected" or "Cancelled" or "Aborted" => "danger",
+                    "Queried" or "Escalated" => "warn",
+                    "PendingFleetReview" or "PendingApproval" or "PendingVerification" => "info",
+                    _ => "neutral"
+                };
+            }
+            <span class="badge @statusBadge">@Model.Trip.Status</span>
+            @if (Model.Trip.Score.HasValue) { <span class="badge success">@Model.Trip.Score.Value.ToString("F0")% compliance</span> }
+        </div>
+        <a class="btn" href="/admin/requests/@Model.Trip.Id/map">
+            <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 018 8c0 6-8 12-8 12S4 16 4 10a8 8 0 018-8z"/></svg>
+            View map
+        </a>
+    </div>
     @if (!string.IsNullOrEmpty(Model.Message)) { <p class="status">@Model.Message</p> }
 
     <div class="card">
@@ -46,7 +62,7 @@ else
                         @foreach (var d in Model.Drivers) { <option value="@d.Id" selected="@(d.Id == Model.Trip.DriverId)">@d.Name</option> }
                     </select>
                 </div>
-                <button class="btn" type="submit">Assign</button>
+                <button class="btn btn-primary" type="submit">Assign</button>
             </form>
         </div>
     }
@@ -60,8 +76,8 @@ else
                     <label>Rejection reason (if rejecting)</label>
                     <input class="input" name="reason" />
                 </div>
-                <button class="btn" type="submit" name="action" value="approve">Approve</button>
-                <button class="btn" type="submit" name="action" value="reject" style="background:#fce4e4;color:#a82020;border-color:#fab2b2">Reject</button>
+                <button class="btn btn-primary" type="submit" name="action" value="approve">Approve</button>
+                <button class="btn btn-danger" type="submit" name="action" value="reject">Reject</button>
             </form>
         </div>
     }
@@ -75,7 +91,7 @@ else
                     <label>Note (optional)</label>
                     <input class="input" name="note" />
                 </div>
-                <button class="btn" type="submit" name="action" value="verify">Verify</button>
+                <button class="btn btn-primary" type="submit" name="action" value="verify">Verify</button>
                 <button class="btn" type="submit" name="action" value="query">Query driver</button>
             </form>
         </div>
@@ -85,7 +101,7 @@ else
     {
         <div class="card">
             <form method="post" asp-page-handler="Close" asp-route-id="@Model.Trip.Id">
-                <button class="btn" type="submit">Close trip</button>
+                <button class="btn btn-primary" type="submit">Close trip</button>
             </form>
         </div>
     }
@@ -94,7 +110,7 @@ else
     {
         <div class="card">
             <form method="post" asp-page-handler="Reconcile" asp-route-id="@Model.Trip.Id">
-                <button class="btn" type="submit">Re-run reconciliation</button>
+                <button class="btn btn-primary" type="submit">Re-run reconciliation</button>
             </form>
         </div>
     }
@@ -105,7 +121,7 @@ else
         else
         {
             <table>
-                <thead><tr><th>Time</th><th>Event</th><th>Location</th><th>Odometer</th><th>Notes</th></tr></thead>
+                <thead><tr><th>Time</th><th>Event</th><th>Location</th><th>Odometer</th><th>Notes</th><th>Photo</th></tr></thead>
                 <tbody>
                 @foreach (var l in Model.Logs)
                 {
@@ -115,6 +131,16 @@ else
                         <td>@(l.Lat.HasValue ? $"{l.Lat:F4}, {l.Lng:F4}" : "—")</td>
                         <td>@(l.Odometer?.ToString("N0") ?? "—")</td>
                         <td>@l.Notes</td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(l.PhotoUrl))
+                            {
+                                <a href="@l.PhotoUrl" target="_blank"><img src="@l.PhotoUrl" alt="Photo" style="height:48px;border-radius:4px" /></a>
+                            }
+                            else
+                            {
+                                <span>—</span>
+                            }
+                        </td>
                     </tr>
                 }
                 </tbody>

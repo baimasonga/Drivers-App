@@ -2,20 +2,50 @@
 @model AvdpSmartFleet.Api.Pages.Admin.IndexModel
 @{ ViewData["Title"] = "Dashboard"; }
 
-<h1>Dashboard</h1>
-<p class="muted">Last 30 days · live from the database</p>
+<p class="muted small">Operational metrics for the last 30 days</p>
 
 <div class="kpis">
-    <div class="kpi"><div class="label">Total requests</div><div class="value">@Model.TotalRequests</div></div>
-    <div class="kpi"><div class="label">Approved</div><div class="value">@Model.Approved</div></div>
-    <div class="kpi"><div class="label">Completed</div><div class="value">@Model.Completed</div></div>
-    <div class="kpi"><div class="label">Open exceptions</div><div class="value">@Model.OpenExceptions</div></div>
-    <div class="kpi"><div class="label">Unauthorized movements</div><div class="value">@Model.UnauthorizedMovements</div></div>
-    <div class="kpi"><div class="label">Avg compliance</div><div class="value">@Model.AvgCompliance.ToString("F0")%</div></div>
+    <div class="kpi">
+        <div class="label">Total requests</div>
+        <div class="value">@Model.TotalRequests</div>
+        <div class="kpi-icon"><svg class="ico" viewBox="0 0 24 24"><path d="M5 3h14v18l-7-3-7 3z" /></svg></div>
+    </div>
+    <div class="kpi">
+        <div class="label">Approved</div>
+        <div class="value">@Model.Approved</div>
+        <div class="kpi-icon"><svg class="ico" viewBox="0 0 24 24"><path d="M5 12l4 4L19 6" /></svg></div>
+    </div>
+    <div class="kpi">
+        <div class="label">Completed trips</div>
+        <div class="value">@Model.Completed</div>
+        <div class="kpi-icon"><svg class="ico" viewBox="0 0 24 24"><path d="M3 12l5 5L21 4" /></svg></div>
+    </div>
+    <div class="kpi">
+        <div class="label">Open exceptions</div>
+        <div class="value">@Model.OpenExceptions</div>
+        <div class="kpi-icon" style="background:var(--danger-bg);color:var(--danger)">
+            <svg class="ico" viewBox="0 0 24 24"><path d="M12 2 2 22h20zM12 9v6M12 18v.5" /></svg>
+        </div>
+    </div>
+    <div class="kpi">
+        <div class="label">Unauthorized moves</div>
+        <div class="value">@Model.UnauthorizedMovements</div>
+        <div class="kpi-icon" style="background:var(--warning-bg);color:var(--warning)">
+            <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16v.01" /></svg>
+        </div>
+    </div>
+    <div class="kpi">
+        <div class="label">Avg compliance</div>
+        <div class="value">@Model.AvgCompliance.ToString("F0")%</div>
+        <div class="kpi-icon"><svg class="ico" viewBox="0 0 24 24"><path d="M3 3v18h18M7 17l4-4 4 2 4-6" /></svg></div>
+    </div>
 </div>
 
-<div class="card" style="margin-top: 24px;">
-    <h2>Recent activity</h2>
+<div class="card">
+    <div class="row between" style="margin-bottom:14px">
+        <h2 style="margin:0">Recent activity</h2>
+        <a class="btn btn-small" href="/admin/requests">View all →</a>
+    </div>
     <table>
         <thead>
             <tr><th>Code</th><th>Purpose</th><th>Requester</th><th>Vehicle</th><th>Status</th><th>Score</th></tr>
@@ -23,12 +53,20 @@
         <tbody>
         @foreach (var r in Model.Recent)
         {
+            string badgeClass = r.Status switch
+            {
+                "Closed" or "Verified" => "success",
+                "Rejected" or "Cancelled" or "Aborted" => "danger",
+                "Queried" or "Escalated" => "warn",
+                "PendingFleetReview" or "PendingApproval" or "PendingVerification" => "info",
+                _ => "neutral"
+            };
             <tr>
                 <td><a href="/admin/requests/@r.Id">@r.RequestCode</a></td>
                 <td>@r.Purpose</td>
                 <td>@r.Requester</td>
                 <td>@(r.Vehicle ?? "—")</td>
-                <td><span class="badge">@r.Status</span></td>
+                <td><span class="badge @badgeClass">@r.Status</span></td>
                 <td>@(r.ComplianceScore.HasValue ? r.ComplianceScore.Value.ToString("F0") + "%" : "—")</td>
             </tr>
         }

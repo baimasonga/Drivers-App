@@ -1,0 +1,59 @@
+@page "/queries"
+@attribute [Authorize]
+@inject ApiClient Api
+
+<PageTitle>My queries</PageTitle>
+
+<h1>Queries from Fleet</h1>
+
+@if (queries == null) { <p class="muted">Loading…</p> }
+else if (queries.Count == 0) { <p class="muted">No outstanding queries. ✓</p> }
+else
+{
+    @foreach (var q in queries)
+    {
+        <div class="card">
+            <div class="trip-code">@q.TripCode · @q.Type</div>
+            <p>@q.Description</p>
+            <p class="muted">Raised @q.DetectedAt.ToString("yyyy-MM-dd HH:mm")</p>
+
+            @if (q.Status == "UnderReview" && !string.IsNullOrEmpty(q.DriverExplanation))
+            {
+                <p class="status">Your explanation: @q.DriverExplanation</p>
+            }
+            else
+            {
+                <div class="field">
+                    <label>Explanation</label>
+                    <textarea class="input" rows="3" @bind="explanations[q.Id]"></textarea>
+                </div>
+                @if (errors.TryGetValue(q.Id, out var err)) { <p class="error">@err</p> }
+                <button class="btn primary" @onclick="() => Submit(q.Id)"
+                        disabled="@(busy.Contains(q.Id) || string.IsNullOrWhiteSpace(explanations.GetValueOrDefault(q.Id)))">
+                    @(busy.Contains(q.Id) ? "Sending…" : "Submit explanation")
+                </button>
+            }
+        </div>
+    }
+}
+
+@code {
+    List<DriverQuery>? queries;
+    Dictionary<int, string> explanations = new();
+    Dictionary<int, string> errors = new();
+    HashSet<int> busy = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        queries = await Api.GetMyQueriesAsync();
+    }
+
+    async Task Submit(int id)
+    {
+        busy.Add(id); errors.Remove(id);
+        var ok = await Api.ExplainAsync(id, explanations[id]);
+        busy.Remove(id);
+        if (!ok) { errors[id] = "Could not submit. Try again when online."; return; }
+        queries = await Api.GetMyQueriesAsync();
+    }
+}

@@ -21,7 +21,7 @@ else
         <button class="btn primary" @onclick='() => Log("Departed")'>Departed</button>
         <button class="btn" @onclick='() => Log("Arrived")'>Arrived</button>
         <button class="btn" @onclick='() => Log("Stopped")'>Stopped</button>
-        <button class="btn" @onclick='() => Log("Issue")'>Vehicle issue</button>
+        <a class="btn" href="@($"/trips/{Id}/issue")">Vehicle issue</a>
         <a class="btn" href="@($"/trips/{Id}/diversion")">Request diversion</a>
         <button class="btn" @onclick='() => Log("Returning")'>Returning</button>
     </div>

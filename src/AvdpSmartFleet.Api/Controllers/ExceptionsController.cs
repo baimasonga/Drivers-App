@@ -107,4 +107,29 @@ public class ExceptionsController : ControllerBase
                 e.Id, Type = e.Type.ToString(), Status = e.Status.ToString(),
                 e.Description, e.DriverExplanation, e.OfficerNote, e.DetectedAt, e.ResolvedAt
             }).ToListAsync();
+
+    [HttpGet("my-queries")]
+    [Authorize(Roles = "Driver,Admin")]
+    public async Task<IEnumerable<object>> MyQueries()
+    {
+        var driver = await _db.Drivers.FirstOrDefaultAsync(d => d.UserId == CurrentUserId);
+        if (driver == null) return Enumerable.Empty<object>();
+        return await _db.TripExceptions
+            .Include(e => e.TravelRequest)
+            .Where(e => e.TravelRequest.AssignedDriverId == driver.Id
+                        && (e.Status == ExceptionStatus.Open || e.Status == ExceptionStatus.UnderReview)
+                        && (e.DriverExplanation == null || e.Status == ExceptionStatus.Open))
+            .OrderByDescending(e => e.DetectedAt)
+            .Select(e => new
+            {
+                e.Id,
+                TripId = e.TravelRequestId,
+                TripCode = e.TravelRequest.RequestCode,
+                Type = e.Type.ToString(),
+                Status = e.Status.ToString(),
+                e.Description,
+                e.DriverExplanation,
+                e.DetectedAt
+            }).ToListAsync();
+    }
 }

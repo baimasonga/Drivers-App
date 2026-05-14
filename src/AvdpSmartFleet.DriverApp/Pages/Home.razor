@@ -6,17 +6,30 @@
 <PageTitle>My trips</PageTitle>
 
 <h1>My trips</h1>
+<p class="muted small">Your assigned trips appear below.</p>
 
 @if (pending > 0)
 {
     <div class="banner warn">
-        <span>@pending queued log(s) pending sync</span>
+        <span>@pending log(s) queued for sync</span>
         <button class="link" @onclick="Flush">Sync now</button>
     </div>
 }
+@if (queryCount > 0)
+{
+    <a class="banner danger" href="/queries" style="text-decoration:none;color:inherit">
+        <span>@queryCount query(s) from Fleet awaiting response</span>
+        <span>→</span>
+    </a>
+}
 
 @if (trips == null) { <p class="muted">Loading…</p> }
-else if (trips.Count == 0) { <p class="muted">No active assignments.</p> }
+else if (trips.Count == 0)
+{
+    <div class="card" style="text-align:center; padding:32px 20px">
+        <p class="muted" style="margin:0">No active assignments right now.</p>
+    </div>
+}
 else
 {
     @foreach (var t in trips)
@@ -24,10 +37,8 @@ else
         <a class="trip-card" href="@($"/trips/{t.Id}")">
             <div class="trip-code">@t.RequestCode</div>
             <div class="trip-purpose">@t.Purpose</div>
-            <div class="trip-meta">
-                <span>@t.Vehicle</span> · <span>@(t.Destination ?? "—")</span>
-            </div>
-            <div class="trip-times">@t.PlannedDeparture.ToString("ddd HH:mm") → @t.PlannedReturn.ToString("ddd HH:mm")</div>
+            <div class="trip-meta">@t.Vehicle · @(t.Destination ?? "—")</div>
+            <div class="trip-times">@t.PlannedDeparture.ToString("ddd dd MMM, HH:mm") → @t.PlannedReturn.ToString("HH:mm")</div>
             <span class="badge">@t.Status</span>
         </a>
     }
@@ -36,11 +47,14 @@ else
 @code {
     List<TripAssignment>? trips;
     int pending;
+    int queryCount;
 
     protected override async Task OnInitializedAsync()
     {
         trips = await Api.GetMyAssignmentsAsync();
         pending = await Queue.PendingCountAsync();
+        var qs = await Api.GetMyQueriesAsync();
+        queryCount = qs?.Count(q => q.Status == "Open") ?? 0;
     }
 
     async Task Flush()

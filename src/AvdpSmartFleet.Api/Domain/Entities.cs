@@ -15,6 +15,8 @@ public class User
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? LastLoginAt { get; set; }
     [MaxLength(120)] public string? DeviceId { get; set; }
+    public int FailedLoginAttempts { get; set; }
+    public DateTime? LockedUntil { get; set; }
 }
 
 public class Vehicle

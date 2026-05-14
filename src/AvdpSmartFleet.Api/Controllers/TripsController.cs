@@ -121,6 +121,7 @@ public class TripsController : ControllerBase
             PhoneLng = req.PhoneLng,
             Notes = req.Notes,
             OdometerReading = req.OdometerReading,
+            PhotoUrl = req.PhotoUrl,
             LoggedByUserId = CurrentUserId,
             LocalUuid = req.LocalUuid,
             SyncedOffline = req.EventAt.HasValue && (DateTime.UtcNow - req.EventAt.Value).TotalMinutes > 5

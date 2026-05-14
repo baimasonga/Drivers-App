@@ -4,6 +4,7 @@
 @inject OfflineQueue Queue
 @inject GeolocationService Geo
 @inject NavigationManager Nav
+@inject AppConfig Config
 
 <PageTitle>Pre-departure</PageTitle>
 
@@ -30,6 +31,8 @@
         <label>Starting odometer (km)</label>
         <input class="input" type="number" @bind="odometer" />
     </div>
+    <PhotoCapture Label="Odometer photo" BaseUrl="@Config.ApiBaseUrl"
+                  OnUploaded="@(url => odoPhotoUrl = url)" />
     <div class="field">
         <label>Notes (optional)</label>
         <input class="input" @bind="notes" />
@@ -47,6 +50,7 @@
     bool bodyOk, fuelOk, tyresOk, lightsOk, spareOk;
     int? odometer;
     string? notes;
+    string? odoPhotoUrl;
     string? message;
     bool busy;
 
@@ -58,7 +62,7 @@
         var pos = await Geo.GetCurrentAsync();
         var summary = $"Pre-departure checklist: body={bodyOk}, fuel={fuelOk}, tyres={tyresOk}, lights={lightsOk}, spare={spareOk}; notes={notes}";
         var req = new TripLogRequest(Id, "PreDeparture", pos?.Lat, pos?.Lng, summary, odometer,
-            Guid.NewGuid().ToString(), DateTime.UtcNow);
+            Guid.NewGuid().ToString(), DateTime.UtcNow, odoPhotoUrl);
         await Queue.EnqueueOrSendAsync(req);
         message = "Checklist submitted ✓";
         busy = false;

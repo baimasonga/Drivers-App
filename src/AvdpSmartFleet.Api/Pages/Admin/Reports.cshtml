@@ -1,13 +1,32 @@
 @page "/admin/reports"
 @{ ViewData["Title"] = "Reports"; }
+<p class="muted small">Export operational data for audit and management review</p>
 
-<h1>Reports</h1>
-<p class="muted">Export operational data for audit and management review.</p>
+<div class="kpis">
+    <a class="kpi" href="/api/reports/trips.csv" download style="text-decoration:none;color:inherit;cursor:pointer">
+        <div class="label">Trips</div>
+        <div class="value" style="font-size:18px;font-weight:600">Download CSV</div>
+        <p class="muted small" style="margin-top:8px;margin-bottom:0">Full trip history with compliance scores</p>
+        <div class="kpi-icon"><svg class="ico" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></div>
+    </a>
+    <a class="kpi" href="/api/reports/exceptions.csv" download style="text-decoration:none;color:inherit;cursor:pointer">
+        <div class="label">Exceptions</div>
+        <div class="value" style="font-size:18px;font-weight:600">Download CSV</div>
+        <p class="muted small" style="margin-top:8px;margin-bottom:0">All flagged events + explanations</p>
+        <div class="kpi-icon" style="background:var(--danger-bg);color:var(--danger)">
+            <svg class="ico" viewBox="0 0 24 24"><path d="M12 2 2 22h20zM12 9v6M12 18v.5"/></svg>
+        </div>
+    </a>
+    <a class="kpi" href="/api/reports/vehicle-utilization.csv" download style="text-decoration:none;color:inherit;cursor:pointer">
+        <div class="label">Vehicle utilization</div>
+        <div class="value" style="font-size:18px;font-weight:600">Download CSV</div>
+        <p class="muted small" style="margin-top:8px;margin-bottom:0">Last 30 days · trips and km per vehicle</p>
+        <div class="kpi-icon"><svg class="ico" viewBox="0 0 24 24"><path d="M3 13l2-6h14l2 6v6h-4v-2H7v2H3z"/></svg></div>
+    </a>
+</div>
 
 <div class="card">
-    <h2>Downloads</h2>
-    <p><a class="btn" href="/api/reports/trips.csv" download>Trips (CSV)</a></p>
-    <p><a class="btn" href="/api/reports/exceptions.csv" download>Exceptions (CSV)</a></p>
-    <p><a class="btn" href="/api/reports/vehicle-utilization.csv" download>Vehicle utilization, last 30 days (CSV)</a></p>
-    <p class="muted">Date filters: append <code>?from=YYYY-MM-DD&amp;to=YYYY-MM-DD</code> to the URL.</p>
+    <h3>Custom date range</h3>
+    <p class="muted">Append <code>?from=YYYY-MM-DD&amp;to=YYYY-MM-DD</code> to any download URL.</p>
+    <p class="muted small">All CSV exports are UTF-8 encoded and Excel-compatible.</p>
 </div>

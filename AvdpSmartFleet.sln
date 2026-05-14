@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvdpSmartFleet.Api", "src\A
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvdpSmartFleet.DriverApp", "src\AvdpSmartFleet.DriverApp\AvdpSmartFleet.DriverApp.csproj", "{E1331E0D-A338-4B68-A4FF-6DEE2ED74972}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{F5E35CFD-F2FA-4712-A3BE-95099FD24A22}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AvdpSmartFleet.Api.Tests", "tests\AvdpSmartFleet.Api.Tests\AvdpSmartFleet.Api.Tests.csproj", "{550CD039-30F6-45E2-9091-B07678BDA843}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,9 +30,14 @@ Global
 		{E1331E0D-A338-4B68-A4FF-6DEE2ED74972}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E1331E0D-A338-4B68-A4FF-6DEE2ED74972}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E1331E0D-A338-4B68-A4FF-6DEE2ED74972}.Release|Any CPU.Build.0 = Release|Any CPU
+		{550CD039-30F6-45E2-9091-B07678BDA843}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{550CD039-30F6-45E2-9091-B07678BDA843}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{550CD039-30F6-45E2-9091-B07678BDA843}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{550CD039-30F6-45E2-9091-B07678BDA843}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{96D796F1-2EC1-4AE0-9696-A56D9DB5123D} = {938F6C7F-C066-4438-90D3-7F0C3D62A76D}
 		{E1331E0D-A338-4B68-A4FF-6DEE2ED74972} = {938F6C7F-C066-4438-90D3-7F0C3D62A76D}
+		{550CD039-30F6-45E2-9091-B07678BDA843} = {F5E35CFD-F2FA-4712-A3BE-95099FD24A22}
 	EndGlobalSection
 EndGlobal

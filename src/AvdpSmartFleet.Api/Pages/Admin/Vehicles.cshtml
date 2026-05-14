@@ -1,20 +1,28 @@
 @page "/admin/vehicles"
 @model AvdpSmartFleet.Api.Pages.Admin.VehiclesModel
 @{ ViewData["Title"] = "Vehicles"; }
+<p class="muted small">@Model.Items.Count vehicle(s) in fleet</p>
 
-<h1>Vehicles</h1>
-<div class="card">
+<div class="card" style="padding:0">
     <table>
         <thead><tr><th>Plate</th><th>Make / Model</th><th>Type</th><th>Home Base</th><th>Status</th><th>GPS Unit</th><th>Odometer</th></tr></thead>
         <tbody>
         @foreach (var v in Model.Items)
         {
+            string sb = v.Status switch
+            {
+                "Available" => "success",
+                "InUse" or "Assigned" => "info",
+                "Maintenance" => "warn",
+                "OutOfService" => "danger",
+                _ => "neutral"
+            };
             <tr>
                 <td><strong>@v.Plate</strong></td>
                 <td>@v.Make @v.Model</td>
                 <td>@v.Type</td>
                 <td>@v.HomeBase</td>
-                <td><span class="badge">@v.Status</span></td>
+                <td><span class="badge @sb">@v.Status</span></td>
                 <td>@(v.GpsUnit ?? "—")</td>
                 <td>@(v.Odometer?.ToString("N0") ?? "—") km</td>
             </tr>

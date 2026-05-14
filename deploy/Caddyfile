@@ -1,0 +1,39 @@
+# AVDP SmartFleet — Caddy reverse proxy
+# Automatic HTTPS via Let's Encrypt for the two domains below.
+#
+# Replace `avdp.example.org` and `driver.avdp.example.org` with the real
+# AVDP-controlled hostnames before deployment. Point both A/AAAA records
+# at the server hosting this docker-compose stack.
+
+{
+    # Optional: set an email for Let's Encrypt expiry warnings
+    email ops@avdp.sl
+    # Comment the next line out in production. Useful for local testing.
+    # auto_https off
+}
+
+# Admin + API
+avdp.example.org {
+    encode zstd gzip
+    @api path /api/* /swagger* /healthz /uploads/*
+    @adminPages path /admin* /
+    reverse_proxy api:8080
+    # Sensible defaults
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        -Server
+    }
+}
+
+# Driver PWA
+driver.avdp.example.org {
+    encode zstd gzip
+    reverse_proxy driver:80
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        -Server
+    }
+}

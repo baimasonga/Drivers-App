@@ -1,0 +1,45 @@
+@page "/trips/{Id:int}/issue"
+@attribute [Authorize]
+@inject OfflineQueue Queue
+@inject GeolocationService Geo
+@inject NavigationManager Nav
+@inject AppConfig Config
+
+<PageTitle>Report issue</PageTitle>
+
+<h1>Report vehicle issue</h1>
+<p class="muted">Trip @Id</p>
+
+<div class="card">
+    <div class="field">
+        <label>Describe the issue</label>
+        <textarea class="input" rows="3" @bind="description" placeholder="Flat tyre, breakdown, mechanical fault…"></textarea>
+    </div>
+    <PhotoCapture Label="Photo (optional but recommended)" BaseUrl="@Config.ApiBaseUrl"
+                  OnUploaded="@(url => photoUrl = url)" />
+    @if (!string.IsNullOrEmpty(message)) { <p class="status">@message</p> }
+    <button class="btn primary" @onclick="Submit" disabled="@(busy || string.IsNullOrWhiteSpace(description))">
+        @(busy ? "Submitting…" : "Submit issue")
+    </button>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    string? description;
+    string? photoUrl;
+    string? message;
+    bool busy;
+
+    async Task Submit()
+    {
+        busy = true;
+        var pos = await Geo.GetCurrentAsync();
+        var req = new TripLogRequest(Id, "Issue", pos?.Lat, pos?.Lng, description, null,
+            Guid.NewGuid().ToString(), DateTime.UtcNow, photoUrl);
+        await Queue.EnqueueOrSendAsync(req);
+        message = "Issue reported ✓";
+        busy = false;
+        await Task.Delay(800);
+        Nav.NavigateTo($"/trips/{Id}");
+    }
+}

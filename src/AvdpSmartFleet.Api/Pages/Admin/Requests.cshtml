@@ -1,9 +1,9 @@
 @page "/admin/requests"
 @model AvdpSmartFleet.Api.Pages.Admin.RequestsModel
 @{ ViewData["Title"] = "Travel Requests"; }
+<p class="muted small">@Model.Items.Count request(s)</p>
 
-<h1>Travel Requests <a class="btn" href="/admin/requests/new" style="font-size:0.85rem;float:right">+ New request</a></h1>
-<div class="card">
+<div class="card" style="padding:0">
     <table>
         <thead>
             <tr><th>Code</th><th>Requester</th><th>Department</th><th>Purpose</th><th>Departure</th><th>Vehicle</th><th>Driver</th><th>Status</th><th>Score</th></tr>
@@ -11,6 +11,14 @@
         <tbody>
         @foreach (var r in Model.Items)
         {
+            string badgeClass = r.Status switch
+            {
+                "Closed" or "Verified" => "success",
+                "Rejected" or "Cancelled" or "Aborted" => "danger",
+                "Queried" or "Escalated" => "warn",
+                "PendingFleetReview" or "PendingApproval" or "PendingVerification" => "info",
+                _ => "neutral"
+            };
             <tr>
                 <td><a href="/admin/requests/@r.Id">@r.Code</a></td>
                 <td>@r.Requester</td>
@@ -19,7 +27,7 @@
                 <td>@r.PlannedDeparture.ToString("yyyy-MM-dd HH:mm")</td>
                 <td>@(r.Vehicle ?? "—")</td>
                 <td>@(r.Driver ?? "—")</td>
-                <td><span class="badge">@r.Status</span></td>
+                <td><span class="badge @badgeClass">@r.Status</span></td>
                 <td>@(r.Score.HasValue ? r.Score.Value.ToString("F0") : "—")</td>
             </tr>
         }

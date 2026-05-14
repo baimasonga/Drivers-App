@@ -10,6 +10,7 @@ builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 var apiBase = builder.Configuration["ApiBaseUrl"] ?? builder.HostEnvironment.BaseAddress;
+builder.Services.AddSingleton(new AppConfig { ApiBaseUrl = apiBase });
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(apiBase) });
 
 builder.Services.AddBlazoredLocalStorage();

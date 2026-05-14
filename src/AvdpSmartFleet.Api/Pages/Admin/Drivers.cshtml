@@ -1,16 +1,20 @@
 @page "/admin/drivers"
 @model AvdpSmartFleet.Api.Pages.Admin.DriversModel
 @{ ViewData["Title"] = "Drivers"; }
-<h1>Drivers</h1>
-<div class="card">
+<p class="muted small">@Model.Items.Count driver(s)</p>
+
+<div class="card" style="padding:0">
     <table>
         <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>License</th><th>Status</th></tr></thead>
         <tbody>
         @foreach (var d in Model.Items)
         {
             <tr>
-                <td>@d.Name</td><td>@d.Phone</td><td>@d.Email</td><td>@d.License</td>
-                <td><span class="badge">@(d.Available ? "Available" : "Busy")</span></td>
+                <td><strong>@d.Name</strong></td>
+                <td>@d.Phone</td>
+                <td>@d.Email</td>
+                <td>@d.License</td>
+                <td><span class="badge @(d.Available ? "success" : "warn")">@(d.Available ? "Available" : "Busy")</span></td>
             </tr>
         }
         </tbody>

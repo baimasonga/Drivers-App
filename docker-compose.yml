@@ -1,0 +1,64 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: src/AvdpSmartFleet.Api/Dockerfile
+    image: avdp/smartfleet-api:latest
+    container_name: avdp-api
+    restart: unless-stopped
+    expose:
+      - "8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__Default=Data Source=/data/avdp_smartfleet.db
+      - Jwt__Key=${JWT_KEY:?Set JWT_KEY to a 32+ char secret}
+      - Jwt__Issuer=${JWT_ISSUER:-AvdpSmartFleet}
+      - Jwt__Audience=${JWT_AUDIENCE:-AvdpSmartFleetClients}
+      - Cors__AllowedOrigins__0=${DRIVER_APP_URL:-https://driver.avdp.example.org}
+      - GpsTrace__UseReal=${GPS_TRACE_USE_REAL:-false}
+      - GpsTrace__BaseUrl=${GPS_TRACE_BASE_URL:-https://hosting.gps-trace.com}
+      - GpsTrace__Token=${GPS_TRACE_TOKEN:-}
+    volumes:
+      - avdp-data:/data
+      - avdp-uploads:/app/uploads
+      - avdp-logs:/app/logs
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:8080/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  driver:
+    build:
+      context: .
+      dockerfile: src/AvdpSmartFleet.DriverApp/Dockerfile
+    image: avdp/smartfleet-driver:latest
+    container_name: avdp-driver
+    restart: unless-stopped
+    expose:
+      - "80"
+    depends_on:
+      - api
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: avdp-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - api
+      - driver
+
+volumes:
+  avdp-data:
+  avdp-uploads:
+  avdp-logs:
+  caddy-data:
+  caddy-config:

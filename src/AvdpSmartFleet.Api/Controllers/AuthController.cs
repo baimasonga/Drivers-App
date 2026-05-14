@@ -4,12 +4,14 @@ using AvdpSmartFleet.Api.Dtos;
 using AvdpSmartFleet.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 namespace AvdpSmartFleet.Api.Controllers;
 
 [ApiController]
 [Route("api/auth")]
+[EnableRateLimiting("auth")]
 public class AuthController : ControllerBase
 {
     private readonly AppDbContext _db;
@@ -21,13 +23,42 @@ public class AuthController : ControllerBase
         _db = db; _jwt = jwt; _audit = audit;
     }
 
+    private const int MaxFailedAttempts = 5;
+    private static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
+
     [HttpPost("login")]
     public async Task<ActionResult<LoginResponse>> Login(LoginRequest req)
     {
-        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == req.Email && u.IsActive);
-        if (user == null || !BCrypt.Net.BCrypt.Verify(req.Password, user.PasswordHash))
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == req.Email);
+
+        // Same response for non-existent + wrong password to prevent enumeration
+        if (user == null)
             return Unauthorized(new { error = "Invalid credentials" });
 
+        if (!user.IsActive)
+            return Unauthorized(new { error = "Account disabled" });
+
+        if (user.LockedUntil.HasValue && user.LockedUntil.Value > DateTime.UtcNow)
+        {
+            var remaining = (int)(user.LockedUntil.Value - DateTime.UtcNow).TotalMinutes + 1;
+            return StatusCode(StatusCodes.Status423Locked,
+                new { error = $"Account locked. Try again in {remaining} minute(s)." });
+        }
+
+        if (!BCrypt.Net.BCrypt.Verify(req.Password, user.PasswordHash))
+        {
+            user.FailedLoginAttempts++;
+            if (user.FailedLoginAttempts >= MaxFailedAttempts)
+            {
+                user.LockedUntil = DateTime.UtcNow.Add(LockoutDuration);
+                await _audit.LogAsync("LoginLockout", "User", user.Id);
+            }
+            await _db.SaveChangesAsync();
+            return Unauthorized(new { error = "Invalid credentials" });
+        }
+
+        user.FailedLoginAttempts = 0;
+        user.LockedUntil = null;
         user.LastLoginAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
         await _audit.LogAsync("Login", "User", user.Id);
