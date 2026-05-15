@@ -1,0 +1,102 @@
+@inject ApiClient Api
+@inject IJSRuntime JS
+
+<div class="field">
+    <label>Starting odometer (km)</label>
+    <div class="row" style="display:flex;gap:8px;align-items:center">
+        <input class="input" type="number" @bind="Reading" @bind:event="oninput" placeholder="e.g. 45230" style="flex:1" />
+        @if (Reading.HasValue && ocrSuggestion.HasValue && Reading == ocrSuggestion)
+        {
+            <span class="badge success">📷 auto</span>
+        }
+    </div>
+    @if (!string.IsNullOrEmpty(suggestionHint))
+    {
+        <p class="muted small" style="margin-top:4px">@suggestionHint</p>
+    }
+</div>
+
+<div class="field">
+    <label>Odometer photo @(uploadedUrl != null ? "✓" : "")</label>
+    @if (!string.IsNullOrEmpty(uploadedUrl))
+    {
+        <div class="photo-preview">
+            <img src="@(BaseUrl + uploadedUrl)" alt="Odometer photo" />
+            <button class="link" type="button" @onclick="Clear">Retake</button>
+        </div>
+    }
+    else
+    {
+        <InputFile OnChange="OnFile" accept="image/*" capture="environment" class="input" />
+    }
+    @if (busy) { <p class="muted small">@statusMsg</p> }
+    @if (!string.IsNullOrEmpty(err)) { <p class="error">@err</p> }
+</div>
+
+@code {
+    [Parameter] public string? BaseUrl { get; set; }
+    [Parameter] public int? Reading { get; set; }
+    [Parameter] public EventCallback<int?> ReadingChanged { get; set; }
+    [Parameter] public string? PhotoUrl { get; set; }
+    [Parameter] public EventCallback<string?> PhotoUrlChanged { get; set; }
+
+    string? uploadedUrl;
+    string? err, statusMsg, suggestionHint;
+    bool busy;
+    int? ocrSuggestion;
+
+    protected override void OnParametersSet()
+    {
+        if (PhotoUrl != null && uploadedUrl == null) uploadedUrl = PhotoUrl;
+    }
+
+    async Task OnFile(InputFileChangeEventArgs e)
+    {
+        err = null; busy = true; statusMsg = "Uploading photo…"; StateHasChanged();
+        try
+        {
+            var file = e.File;
+            if (file.Size > 5 * 1024 * 1024) { err = "Photo too large (max 5 MB)"; return; }
+            var resized = await file.RequestImageFileAsync("image/jpeg", 1600, 1600);
+            using var stream = resized.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+            var result = await Api.UploadPhotoAsync(stream, file.Name, "image/jpeg");
+            if (result == null) { err = "Upload failed"; return; }
+            uploadedUrl = result.Url;
+            await PhotoUrlChanged.InvokeAsync(uploadedUrl);
+
+            // Run OCR on the uploaded photo. Failure is non-fatal — user can type the reading.
+            statusMsg = "Reading odometer with OCR…";
+            StateHasChanged();
+            try
+            {
+                var fullUrl = (BaseUrl ?? "") + uploadedUrl;
+                var digits = await JS.InvokeAsync<int?>("avdpOcr.extractDigits", fullUrl);
+                if (digits.HasValue)
+                {
+                    ocrSuggestion = digits;
+                    Reading = digits;
+                    suggestionHint = $"Auto-detected from photo. Tap the field to edit if wrong.";
+                    await ReadingChanged.InvokeAsync(Reading);
+                }
+                else
+                {
+                    suggestionHint = "Could not read odometer automatically — please type it.";
+                }
+            }
+            catch
+            {
+                suggestionHint = "OCR unavailable — please type the reading.";
+            }
+        }
+        catch (Exception ex) { err = ex.Message; }
+        finally { busy = false; statusMsg = null; StateHasChanged(); }
+    }
+
+    async Task Clear()
+    {
+        uploadedUrl = null;
+        ocrSuggestion = null;
+        suggestionHint = null;
+        await PhotoUrlChanged.InvokeAsync(null);
+    }
+}

@@ -37,6 +37,10 @@
             </a>
 
             <div class="nav-section">Operations</div>
+            <a href="/admin/fleet-live" class="nav-link @(IsActive("/admin/fleet-live") ? "active" : "")">
+                <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>
+                Live Fleet
+            </a>
             <a href="/admin/requests" class="nav-link @(IsActive("/admin/requests") ? "active" : "")">
                 <svg class="ico" viewBox="0 0 24 24"><path d="M5 3h14v18l-7-3-7 3z" /></svg>
                 Travel Requests
@@ -54,6 +58,10 @@
             <a href="/admin/drivers" class="nav-link @(IsActive("/admin/drivers") ? "active" : "")">
                 <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0116 0" /></svg>
                 Drivers
+            </a>
+            <a href="/admin/leaderboard" class="nav-link @(IsActive("/admin/leaderboard") ? "active" : "")">
+                <svg class="ico" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v6a5 5 0 01-10 0zM4 4h3v3a3 3 0 01-3-3zM17 4h3a3 3 0 01-3 3z"/></svg>
+                Leaderboard
             </a>
             <a href="/admin/geofences" class="nav-link @(IsActive("/admin/geofences") ? "active" : "")">
                 <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="10" r="3" /><path d="M12 2a8 8 0 018 8c0 6-8 12-8 12S4 16 4 10a8 8 0 018-8z" /></svg>

@@ -1,7 +1,7 @@
 @page "/admin/geofences"
 @model AvdpSmartFleet.Api.Pages.Admin.GeofencesModel
 @{ ViewData["Title"] = "Geofences"; }
-<p class="muted small">@Model.Items.Count approved location(s)</p>
+<p class="muted small">@Model.Items.Count approved location(s) · <a href="#suggestions">View suggestions</a></p>
 
 <div class="card" style="padding:0">
     <table>
@@ -20,3 +20,48 @@
         </tbody>
     </table>
 </div>
+
+<h2 id="suggestions" style="margin-top:32px">💡 Smart suggestions</h2>
+<p class="muted small">Locations the fleet visits often but aren't registered yet (clustered from GPS stop data).</p>
+<div id="suggestions-list" class="card" style="padding:0">
+    <p class="muted" style="padding:16px">Loading suggestions…</p>
+</div>
+
+<script>
+    async function loadSuggestions() {
+        const r = await fetch('/api/geofences/suggestions');
+        const items = await r.json();
+        const el = document.getElementById('suggestions-list');
+        if (items.length === 0) {
+            el.innerHTML = '<p class="muted" style="padding:16px">No suggestions yet. Need more GPS history.</p>';
+            return;
+        }
+        el.innerHTML = `<table>
+            <thead><tr><th>Location</th><th>Stops</th><th>Suggested radius</th><th>Seen on trips</th><th></th></tr></thead>
+            <tbody>${items.map((s, i) => `
+                <tr>
+                    <td><code>${s.lat.toFixed(4)}, ${s.lng.toFixed(4)}</code></td>
+                    <td><span class="badge">${s.stopCount} stops</span></td>
+                    <td>${s.radiusMeters} m</td>
+                    <td class="muted small">${s.sampleTrips.join(', ') || '—'}</td>
+                    <td>
+                        <button class="btn btn-small btn-primary" onclick="promote(${i})">Add as geofence</button>
+                    </td>
+                </tr>`).join('')}
+            </tbody></table>`;
+        window._suggestions = items;
+    }
+    async function promote(i) {
+        const s = window._suggestions[i];
+        const name = prompt('Geofence name (e.g. "Pujehun Mosque"):');
+        if (!name) return;
+        const category = prompt('Category (Office / Warehouse / ProjectSite / FuelStation / Other):', 'ProjectSite');
+        const r = await fetch('/api/geofences/from-suggestion', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, category, centerLat: s.lat, centerLng: s.lng, radiusMeters: s.radiusMeters })
+        });
+        if (r.ok) location.reload();
+        else alert('Failed: ' + r.status);
+    }
+    loadSuggestions();
+</script>

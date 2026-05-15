@@ -1,0 +1,71 @@
+@page "/admin/fleet-live"
+@{ ViewData["Title"] = "Live fleet"; }
+
+<p class="muted small">Real-time positions of all vehicles currently on approved trips. Auto-refreshes every 30 seconds.</p>
+
+<div id="live-stats" class="kpis" style="margin-bottom:16px"></div>
+
+<div class="card" style="padding:0">
+    <div id="map" style="height: 70vh; border-radius: 10px;"></div>
+</div>
+
+<div id="vehicle-list" class="card" style="margin-top:16px;padding:0">
+    <table>
+        <thead><tr><th>Plate</th><th>Driver</th><th>Destination</th><th>Speed</th><th>Source</th><th>Last update</th><th></th></tr></thead>
+        <tbody id="vlist-body"></tbody>
+    </table>
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+.v-marker { background: #15803d; color: white; border: 2px solid white; border-radius: 50%; width: 32px; height: 32px; display: grid; place-items: center; font-size: 10px; font-weight: 700; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+.v-marker.stale { background: #d97706; }
+.v-marker.alert { background: #dc2626; animation: pulse 1.5s infinite; }
+@@keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+</style>
+<script>
+    let map, markers = {};
+    function init() {
+        map = L.map('map').setView([8.4844, -13.2344], 7);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap' }).addTo(map);
+        refresh();
+        setInterval(refresh, 30000);
+    }
+    async function refresh() {
+        const r = await fetch('/api/map/live');
+        const data = await r.json();
+        document.getElementById('live-stats').innerHTML = `
+            <div class="kpi"><div class="label">Active vehicles</div><div class="value">${data.count}</div></div>
+            <div class="kpi"><div class="label">With open exceptions</div><div class="value">${data.vehicles.filter(v => v.hasOpenException).length}</div></div>
+            <div class="kpi"><div class="label">Stale trackers</div><div class="value">${data.vehicles.filter(v => v.isStale).length}</div></div>
+            <div class="kpi"><div class="label">Last refresh</div><div class="value" style="font-size:14px">${new Date(data.generatedAt).toLocaleTimeString()}</div></div>`;
+
+        // Drop old markers
+        const seen = new Set(data.vehicles.map(v => v.tripId));
+        Object.keys(markers).forEach(id => { if (!seen.has(+id)) { map.removeLayer(markers[id]); delete markers[id]; } });
+
+        let bounds = [];
+        const tbody = document.getElementById('vlist-body');
+        tbody.innerHTML = '';
+        data.vehicles.forEach(v => {
+            const cls = v.hasOpenException ? 'alert' : (v.isStale ? 'stale' : '');
+            const html = `<div class="v-marker ${cls}">${v.plate.slice(-3)}</div>`;
+            const icon = L.divIcon({ html, className: '', iconSize: [32, 32] });
+            const popup = `<strong>${v.plate}</strong><br/>${v.driver ?? ''}<br/>→ ${v.destination ?? 'n/a'}<br/><a href="/admin/requests/${v.tripId}">${v.tripCode}</a>`;
+            if (markers[v.tripId]) { markers[v.tripId].setLatLng([v.lat, v.lng]).setIcon(icon).setPopupContent(popup); }
+            else { markers[v.tripId] = L.marker([v.lat, v.lng], { icon }).addTo(map).bindPopup(popup); }
+            bounds.push([v.lat, v.lng]);
+
+            const speed = v.speed != null ? v.speed.toFixed(0) + ' km/h' : '—';
+            const ago = v.lastAt ? Math.floor((Date.now() - new Date(v.lastAt)) / 60000) + ' min ago' : '—';
+            const badge = v.hasOpenException
+                ? '<span class="badge danger">Exception</span>'
+                : v.isStale ? '<span class="badge warn">Stale</span>' : '<span class="badge success">Live</span>';
+            tbody.insertAdjacentHTML('beforeend',
+                `<tr><td><strong>${v.plate}</strong></td><td>${v.driver ?? '—'}</td><td>${v.destination ?? '—'}</td><td>${speed}</td><td>${v.source}</td><td>${ago}</td><td>${badge}</td></tr>`);
+        });
+        if (bounds.length > 0) map.fitBounds(bounds, { padding: [40, 40] });
+    }
+    init();
+</script>

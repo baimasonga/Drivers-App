@@ -109,6 +109,31 @@ public class FleetController : ControllerBase
             }).ToListAsync();
     }
 
+    [HttpGet("geofences/suggestions")]
+    [Authorize(Roles = "FleetOfficer,Admin")]
+    public async Task<IEnumerable<object>> GeofenceSuggestions([FromServices] GeofenceSuggestionService svc)
+    {
+        var s = await svc.SuggestAsync();
+        return s.Select(x => new { x.Lat, x.Lng, x.StopCount, x.RadiusMeters, x.SampleTrips });
+    }
+
+    [HttpPost("geofences/from-suggestion")]
+    [Authorize(Roles = "FleetOfficer,Admin")]
+    public async Task<ActionResult<object>> PromoteSuggestion([FromBody] CreateGeofenceRequest req)
+    {
+        var g = new Geofence
+        {
+            Name = req.Name, Category = req.Category,
+            CenterLat = req.CenterLat, CenterLng = req.CenterLng,
+            RadiusMeters = req.RadiusMeters,
+            IsProvisional = false
+        };
+        _db.Geofences.Add(g);
+        await _db.SaveChangesAsync();
+        await _audit.LogAsync("PromoteSuggestion", "Geofence", g.Id, req.Name);
+        return new { g.Id, g.Name };
+    }
+
     [HttpGet("dashboard/kpis")]
     [Authorize(Roles = "Manager,Auditor,Admin,FleetOfficer")]
     public async Task<object> Kpis()

@@ -1,0 +1,36 @@
+@page "/admin/leaderboard"
+@{ ViewData["Title"] = "Driver leaderboard"; }
+<p class="muted small">Driver compliance ranking · last 30 days</p>
+
+<div id="board" class="card" style="padding:0"></div>
+
+<script>
+    async function load() {
+        const r = await fetch('/api/scorecards/leaderboard');
+        const rows = await r.json();
+        const html = `
+        <table>
+            <thead><tr><th>Rank</th><th>Driver</th><th>Trips</th><th>Avg score</th><th>Km</th><th>Open queries</th><th>Badge</th></tr></thead>
+            <tbody>${rows.map(r => `
+                <tr>
+                    <td><strong>${rankEmoji(r.rank)}</strong></td>
+                    <td><strong>${r.name}</strong></td>
+                    <td>${r.trips}</td>
+                    <td>${r.avgScore > 0 ? r.avgScore + '%' : '—'}</td>
+                    <td>${r.kmDriven.toFixed(0)} km</td>
+                    <td>${r.openQueries > 0 ? '<span class="badge danger">' + r.openQueries + '</span>' : '—'}</td>
+                    <td><span class="badge ${badgeClass(r.badge)}">${r.badge}</span></td>
+                </tr>`).join('')}
+            </tbody>
+        </table>`;
+        document.getElementById('board').innerHTML = html;
+    }
+    function rankEmoji(r) { return r === 1 ? '🥇' : r === 2 ? '🥈' : r === 3 ? '🥉' : '#' + r; }
+    function badgeClass(b) {
+        if (b === 'Gold star' || b === 'Excellent') return 'success';
+        if (b === 'Reliable') return 'info';
+        if (b === 'Needs attention' || b === 'Coach') return 'danger';
+        return 'neutral';
+    }
+    load();
+</script>

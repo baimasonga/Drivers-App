@@ -16,6 +16,8 @@ public record DriverQuery(int Id, int TripId, string TripCode, string Type, stri
 
 public record UploadResult(string Url, long Size);
 
+public record ScorecardDto(int Id, string Name, int Trips, double AvgScore, double KmDriven, int OpenQueries, string Badge, int Streak);
+
 public class ApiClient
 {
     private readonly HttpClient _http;
@@ -57,6 +59,12 @@ public class ApiClient
         var resp = await _http.PostAsJsonAsync($"api/exceptions/{exceptionId}/explain",
             new { explanation });
         return resp.IsSuccessStatusCode;
+    }
+
+    public async Task<ScorecardDto?> GetMyScorecardAsync()
+    {
+        try { return await _http.GetFromJsonAsync<ScorecardDto>("api/scorecards/my"); }
+        catch { return null; }
     }
 
     public async Task<UploadResult?> UploadPhotoAsync(Stream content, string fileName, string contentType)

@@ -1,0 +1,67 @@
+@inject IJSRuntime JS
+@implements IDisposable
+
+<div class="field">
+    <label>@Label</label>
+    <textarea class="input" rows="3" @bind="text" @bind:event="oninput" placeholder="Tap the mic or type…"></textarea>
+    <button type="button" class="btn" style="margin-top:8px;width:auto;padding:10px 14px"
+            @onclick="Toggle" disabled="@busy">
+        @if (listening) { <span>🛑 Stop listening</span> }
+        else { <span>🎤 Dictate</span> }
+    </button>
+    @if (!string.IsNullOrEmpty(err)) { <p class="error">@err</p> }
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "Notes";
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    string text = "";
+    string? err;
+    bool listening, busy;
+    DotNetObjectReference<VoiceInput>? selfRef;
+
+    protected override void OnParametersSet()
+    {
+        if (Value != null && text != Value) text = Value;
+    }
+
+    private async Task Toggle()
+    {
+        if (listening) { await JS.InvokeVoidAsync("avdpVoice.stop"); return; }
+        err = null;
+        selfRef ??= DotNetObjectReference.Create(this);
+        busy = true;
+        try { await JS.InvokeVoidAsync("avdpVoice.start", selfRef); listening = true; }
+        catch (Exception ex) { err = ex.Message; }
+        finally { busy = false; }
+    }
+
+    [JSInvokable]
+    public async Task OnVoiceText(string t, bool isFinal)
+    {
+        text = t;
+        await ValueChanged.InvokeAsync(text);
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public Task OnVoiceError(string error)
+    {
+        err = error;
+        listening = false;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task OnVoiceEnd()
+    {
+        listening = false;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    public void Dispose() => selfRef?.Dispose();
+}

@@ -91,6 +91,12 @@ public class TripsController : ControllerBase
             t.Status = TripStatus.PendingVerification;
             var result = await _recon.ReconcileAsync(t.Id);
             t.ComplianceScore = result.ComplianceScore;
+            t.DistanceKm = result.DistanceKm;
+            var vehicle = await _db.Vehicles.FindAsync(t.AssignedVehicleId);
+            if (vehicle != null && result.DistanceKm > 0)
+            {
+                t.Co2Kg = Math.Round(result.DistanceKm * vehicle.Co2GramsPerKm / 1000.0, 2);
+            }
             foreach (var ex in result.Exceptions) _db.TripExceptions.Add(ex);
             await _db.SaveChangesAsync();
         }

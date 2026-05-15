@@ -39,6 +39,18 @@
         <div class="value">@Model.AvgCompliance.ToString("F0")%</div>
         <div class="kpi-icon"><svg class="ico" viewBox="0 0 24 24"><path d="M3 3v18h18M7 17l4-4 4 2 4-6" /></svg></div>
     </div>
+    <div class="kpi">
+        <div class="label">CO₂ this month</div>
+        <div class="value">@Model.Co2KgMonth.ToString("N0") <span style="font-size:14px;color:var(--text-muted)">kg</span></div>
+        <div class="kpi-icon" style="background:#f0fdf4;color:#15803d">
+            <svg class="ico" viewBox="0 0 24 24"><path d="M5 12a7 7 0 0114 0c0 4-3 7-7 7s-7-3-7-7zM12 2v3"/></svg>
+        </div>
+    </div>
+    <div class="kpi">
+        <div class="label">Distance this month</div>
+        <div class="value">@Model.KmMonth.ToString("N0") <span style="font-size:14px;color:var(--text-muted)">km</span></div>
+        <div class="kpi-icon"><svg class="ico" viewBox="0 0 24 24"><path d="M3 13l2-6h14l2 6v6h-4v-2H7v2H3z"/></svg></div>
+    </div>
 </div>
 
 <div class="card">

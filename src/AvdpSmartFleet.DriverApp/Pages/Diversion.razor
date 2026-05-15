@@ -10,10 +10,8 @@
 <p class="muted">Trip @Id</p>
 
 <div class="card">
-    <div class="field">
-        <label>Reason for diversion</label>
-        <textarea class="input" rows="3" @bind="reason"></textarea>
-    </div>
+    <VoiceInput Label="Reason for diversion" Value="@reason"
+                ValueChanged="@(v => reason = v)" />
     <div class="field">
         <label>New destination</label>
         <input class="input" @bind="newDest" placeholder="e.g. Makeni Hospital" />

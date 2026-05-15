@@ -31,6 +31,11 @@ public class Vehicle
     [MaxLength(80)] public string? HomeBase { get; set; }
     public int? GpsUnitId { get; set; }
     public GpsUnit? GpsUnit { get; set; }
+    /// <summary>
+    /// Grams of CO2 emitted per kilometre. Defaults to 250 g/km (Toyota Hilux diesel).
+    /// SUVs: ~200 g/km, motorbikes: ~80 g/km, trucks: ~600 g/km.
+    /// </summary>
+    public double Co2GramsPerKm { get; set; } = 250;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
 
@@ -97,6 +102,8 @@ public class TravelRequest
     public int? StartOdometer { get; set; }
     public int? EndOdometer { get; set; }
     public double? ComplianceScore { get; set; }
+    public double? Co2Kg { get; set; }
+    public double? DistanceKm { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public List<TripLog> TripLogs { get; set; } = new();

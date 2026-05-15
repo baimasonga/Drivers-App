@@ -16,6 +16,8 @@ public class IndexModel : PageModel
     public int OpenExceptions { get; set; }
     public int UnauthorizedMovements { get; set; }
     public double AvgCompliance { get; set; }
+    public double Co2KgMonth { get; set; }
+    public double KmMonth { get; set; }
 
     public record Row(int Id, string RequestCode, string Purpose, string Requester, string? Vehicle, string Status, double? ComplianceScore);
     public List<Row> Recent { get; set; } = new();
@@ -31,6 +33,12 @@ public class IndexModel : PageModel
         AvgCompliance = await _db.TravelRequests
             .Where(t => t.CompletedAt >= from && t.ComplianceScore != null)
             .AverageAsync(t => (double?)t.ComplianceScore) ?? 0;
+        Co2KgMonth = await _db.TravelRequests
+            .Where(t => t.CompletedAt >= from && t.Co2Kg != null)
+            .SumAsync(t => (double?)t.Co2Kg) ?? 0;
+        KmMonth = await _db.TravelRequests
+            .Where(t => t.CompletedAt >= from && t.DistanceKm != null)
+            .SumAsync(t => (double?)t.DistanceKm) ?? 0;
 
         Recent = await _db.TravelRequests
             .Include(t => t.Requester)

@@ -1,0 +1,63 @@
+@page "/scorecard"
+@attribute [Authorize]
+@inject ApiClient Api
+
+<PageTitle>My scorecard</PageTitle>
+<h1>My scorecard</h1>
+<p class="muted small">Last 30 days</p>
+
+@if (sc == null) { <p class="muted">Loading…</p> }
+else
+{
+    <div class="card" style="text-align:center">
+        <div style="font-size:42px;font-weight:700;color:var(--primary)">@sc.AvgScore<span style="font-size:16px;color:var(--text-muted)">%</span></div>
+        <div class="muted">Average compliance</div>
+        <div style="margin-top:14px">
+            <span class="badge @BadgeClass">@sc.Badge</span>
+        </div>
+        @if (sc.Streak > 0)
+        {
+            <p style="margin-top:12px;font-size:14px;color:var(--success);font-weight:500">
+                🔥 @sc.Streak-trip compliance streak
+            </p>
+        }
+    </div>
+
+    <div class="card">
+        <h2>Stats</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div>
+                <div class="muted small">Trips completed</div>
+                <div style="font-size:22px;font-weight:600">@sc.Trips</div>
+            </div>
+            <div>
+                <div class="muted small">Distance driven</div>
+                <div style="font-size:22px;font-weight:600">@sc.KmDriven.ToString("N0") <span class="muted small">km</span></div>
+            </div>
+            <div>
+                <div class="muted small">Open queries</div>
+                <div style="font-size:22px;font-weight:600;color:@(sc.OpenQueries > 0 ? "var(--danger)" : "inherit")">@sc.OpenQueries</div>
+            </div>
+            <div>
+                <div class="muted small">Rank badge</div>
+                <div style="font-size:14px;font-weight:600;margin-top:4px">@sc.Badge</div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    ScorecardDto? sc;
+    string BadgeClass => sc?.Badge switch
+    {
+        "Gold star" or "Excellent" => "success",
+        "Reliable" => "",
+        "Needs attention" or "Coach" => "danger",
+        _ => ""
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        sc = await Api.GetMyScorecardAsync();
+    }
+}

@@ -27,12 +27,11 @@
     <div class="field">
         <label><input type="checkbox" @bind="spareOk" /> Spare tyre and jack present</label>
     </div>
-    <div class="field">
-        <label>Starting odometer (km)</label>
-        <input class="input" type="number" @bind="odometer" />
-    </div>
-    <PhotoCapture Label="Odometer photo" BaseUrl="@Config.ApiBaseUrl"
-                  OnUploaded="@(url => odoPhotoUrl = url)" />
+    <OdometerCapture BaseUrl="@Config.ApiBaseUrl"
+                     Reading="@odometer"
+                     ReadingChanged="@(v => odometer = v)"
+                     PhotoUrl="@odoPhotoUrl"
+                     PhotoUrlChanged="@(url => odoPhotoUrl = url)" />
     <div class="field">
         <label>Notes (optional)</label>
         <input class="input" @bind="notes" />

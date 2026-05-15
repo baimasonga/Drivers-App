@@ -11,10 +11,8 @@
 <p class="muted">Trip @Id</p>
 
 <div class="card">
-    <div class="field">
-        <label>Describe the issue</label>
-        <textarea class="input" rows="3" @bind="description" placeholder="Flat tyre, breakdown, mechanical fault…"></textarea>
-    </div>
+    <VoiceInput Label="Describe the issue" Value="@description"
+                ValueChanged="@(v => description = v)" />
     <PhotoCapture Label="Photo (optional but recommended)" BaseUrl="@Config.ApiBaseUrl"
                   OnUploaded="@(url => photoUrl = url)" />
     @if (!string.IsNullOrEmpty(message)) { <p class="status">@message</p> }

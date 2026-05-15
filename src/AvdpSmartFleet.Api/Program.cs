@@ -41,6 +41,7 @@ else
     builder.Services.AddSingleton<IGpsTraceClient, MockGpsTraceClient>();
 }
 builder.Services.AddScoped<ReconciliationService>();
+builder.Services.AddScoped<GeofenceSuggestionService>();
 builder.Services.AddHostedService<GpsPollingService>();
 
 builder.Services.AddControllers();

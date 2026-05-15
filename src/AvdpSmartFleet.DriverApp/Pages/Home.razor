@@ -5,7 +5,10 @@
 
 <PageTitle>My trips</PageTitle>
 
-<h1>My trips</h1>
+<div class="row between" style="display:flex;justify-content:space-between;align-items:center">
+    <h1 style="margin-bottom:0">My trips</h1>
+    <a href="/scorecard" class="btn" style="width:auto;padding:8px 12px;font-size:13px;text-decoration:none">📊 Scorecard</a>
+</div>
 <p class="muted small">Your assigned trips appear below.</p>
 
 @if (pending > 0)
