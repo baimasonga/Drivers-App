@@ -36,6 +36,26 @@ public class Vehicle
     /// SUVs: ~200 g/km, motorbikes: ~80 g/km, trucks: ~600 g/km.
     /// </summary>
     public double Co2GramsPerKm { get; set; } = 250;
+
+    // Maintenance config
+    public int ServiceIntervalKm { get; set; } = 5000;
+    public int? LastServiceOdometer { get; set; }
+    public DateTime? LastServiceAt { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+}
+
+public class ServiceRecord
+{
+    public int Id { get; set; }
+    public int VehicleId { get; set; }
+    public Vehicle Vehicle { get; set; } = null!;
+    public ServiceType Type { get; set; }
+    public int? OdometerAt { get; set; }
+    public DateTime PerformedAt { get; set; } = DateTime.UtcNow;
+    [MaxLength(500)] public string? Notes { get; set; }
+    public decimal? CostSll { get; set; }
+    [MaxLength(120)] public string? ServicedBy { get; set; }
+    public int RecordedByUserId { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
 
@@ -184,6 +204,47 @@ public class UnauthorizedMovement
     public double Lng { get; set; }
     public bool Resolved { get; set; }
     [MaxLength(1000)] public string? Resolution { get; set; }
+}
+
+public class ChatMessage
+{
+    public int Id { get; set; }
+    [Required, MaxLength(40)] public string Room { get; set; } = "";
+    public int SenderUserId { get; set; }
+    [MaxLength(120)] public string SenderName { get; set; } = "";
+    [MaxLength(40)] public string SenderRole { get; set; } = "";
+    [Required, MaxLength(2000)] public string Body { get; set; } = "";
+    public DateTime SentAt { get; set; } = DateTime.UtcNow;
+}
+
+public class RoadAlert
+{
+    public int Id { get; set; }
+    public RoadAlertType Type { get; set; }
+    public AlertSeverity Severity { get; set; } = AlertSeverity.Medium;
+    public double Lat { get; set; }
+    public double Lng { get; set; }
+    [MaxLength(500)] public string? Notes { get; set; }
+    [MaxLength(500)] public string? PhotoUrl { get; set; }
+    public int ReportedByUserId { get; set; }
+    public DateTime ReportedAt { get; set; } = DateTime.UtcNow;
+    public DateTime ExpiresAt { get; set; } = DateTime.UtcNow.AddHours(24);
+    public int ConfirmationsStillThere { get; set; }
+    public int ConfirmationsCleared { get; set; }
+    public bool IsActive { get; set; } = true;
+    public List<RoadAlertConfirmation> Confirmations { get; set; } = new();
+}
+
+public class RoadAlertConfirmation
+{
+    public int Id { get; set; }
+    public int RoadAlertId { get; set; }
+    public RoadAlert RoadAlert { get; set; } = null!;
+    public int UserId { get; set; }
+    public AlertConfirmation Vote { get; set; }
+    public DateTime At { get; set; } = DateTime.UtcNow;
+    public double? Lat { get; set; }
+    public double? Lng { get; set; }
 }
 
 public class AuditLog

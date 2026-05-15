@@ -1,5 +1,6 @@
 using AvdpSmartFleet.Api.Data;
 using AvdpSmartFleet.Api.Domain;
+using AvdpSmartFleet.Api.Services;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,7 +9,8 @@ namespace AvdpSmartFleet.Api.Pages.Admin;
 public class IndexModel : PageModel
 {
     private readonly AppDbContext _db;
-    public IndexModel(AppDbContext db) => _db = db;
+    private readonly VehicleHealthService _health;
+    public IndexModel(AppDbContext db, VehicleHealthService health) { _db = db; _health = health; }
 
     public int TotalRequests { get; set; }
     public int Approved { get; set; }
@@ -18,6 +20,7 @@ public class IndexModel : PageModel
     public double AvgCompliance { get; set; }
     public double Co2KgMonth { get; set; }
     public double KmMonth { get; set; }
+    public int VehiclesNeedingAttention { get; set; }
 
     public record Row(int Id, string RequestCode, string Purpose, string Requester, string? Vehicle, string Status, double? ComplianceScore);
     public List<Row> Recent { get; set; } = new();
@@ -39,6 +42,11 @@ public class IndexModel : PageModel
         KmMonth = await _db.TravelRequests
             .Where(t => t.CompletedAt >= from && t.DistanceKm != null)
             .SumAsync(t => (double?)t.DistanceKm) ?? 0;
+        var allHealth = await _health.GetAllAsync();
+        VehiclesNeedingAttention = allHealth.Count(h =>
+            h.Status == HealthStatus.Overdue
+            || h.Status == HealthStatus.RepeatedIssues
+            || h.Status == HealthStatus.ServiceDue);
 
         Recent = await _db.TravelRequests
             .Include(t => t.Requester)

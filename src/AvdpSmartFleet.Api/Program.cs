@@ -42,10 +42,13 @@ else
 }
 builder.Services.AddScoped<ReconciliationService>();
 builder.Services.AddScoped<GeofenceSuggestionService>();
+builder.Services.AddScoped<VehicleHealthService>();
+builder.Services.AddScoped<DriverCoachingService>();
 builder.Services.AddHostedService<GpsPollingService>();
 
 builder.Services.AddControllers();
 builder.Services.AddRazorPages();
+builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -85,6 +88,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+        };
+        o.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = ctx =>
+            {
+                var accessToken = ctx.Request.Query["access_token"];
+                var path = ctx.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                    ctx.Token = accessToken;
+                return Task.CompletedTask;
+            }
         };
     });
 builder.Services.AddAuthorization();
@@ -150,6 +164,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapRazorPages();
+app.MapHub<AvdpSmartFleet.Api.Services.ChatHub>("/hubs/chat");
 app.MapHealthChecks("/healthz");
 app.MapGet("/", () => Results.Redirect("/admin"));
 

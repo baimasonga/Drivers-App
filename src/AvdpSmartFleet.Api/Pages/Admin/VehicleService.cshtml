@@ -1,0 +1,76 @@
+@page "/admin/maintenance/{id:int}"
+@model AvdpSmartFleet.Api.Pages.Admin.VehicleServiceModel
+@{ ViewData["Title"] = "Service · " + Model.Plate; }
+
+@if (Model.Vehicle == null) { <p>Not found.</p> }
+else
+{
+    <p><a href="/admin/maintenance">← Back to maintenance</a></p>
+    <h2>@Model.Plate · @Model.Vehicle.Make @Model.Vehicle.Model</h2>
+    <p class="muted small">Current odometer: @(Model.Vehicle.CurrentOdometer?.ToString("N0") ?? "—") km · Service interval: @Model.Vehicle.ServiceIntervalKm.ToString("N0") km</p>
+
+    @if (!string.IsNullOrEmpty(Model.Message)) { <p class="status">@Model.Message</p> }
+
+    <div class="card">
+        <h2>Log new service</h2>
+        <form method="post" asp-page-handler="Log" asp-route-id="@Model.Vehicle.Id">
+            <div class="field">
+                <label>Service type</label>
+                <select class="input" name="type">
+                    <option value="0">Oil change</option>
+                    <option value="1">Tyre change</option>
+                    <option value="2">Brake service</option>
+                    <option value="3">Full service</option>
+                    <option value="4">Repair</option>
+                    <option value="5">Inspection</option>
+                    <option value="6">Other</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Odometer reading at service (km)</label>
+                <input class="input" type="number" name="odometerAt" value="@Model.Vehicle.CurrentOdometer" />
+            </div>
+            <div class="field">
+                <label>Performed on</label>
+                <input class="input" type="date" name="performedAt" value="@DateTime.UtcNow.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="field">
+                <label>Serviced by (garage / mechanic)</label>
+                <input class="input" name="servicedBy" />
+            </div>
+            <div class="field">
+                <label>Cost (SLL, optional)</label>
+                <input class="input" type="number" step="0.01" name="costSll" />
+            </div>
+            <div class="field">
+                <label>Notes</label>
+                <textarea class="input" name="notes" rows="3"></textarea>
+            </div>
+            <button class="btn btn-primary" type="submit">Save service record</button>
+        </form>
+    </div>
+
+    <div class="card" style="padding:0">
+        <div style="padding:20px 24px"><h2 style="margin:0">Service history</h2></div>
+        @if (Model.History.Count == 0) { <p class="muted" style="padding:0 24px 20px">No service records yet.</p> }
+        else
+        {
+            <table>
+                <thead><tr><th>Date</th><th>Type</th><th>Odometer</th><th>Garage</th><th>Cost</th><th>Notes</th></tr></thead>
+                <tbody>
+                @foreach (var s in Model.History)
+                {
+                    <tr>
+                        <td>@s.PerformedAt.ToString("yyyy-MM-dd")</td>
+                        <td><span class="badge">@s.Type</span></td>
+                        <td>@(s.OdometerAt?.ToString("N0") ?? "—") km</td>
+                        <td>@s.ServicedBy</td>
+                        <td>@(s.CostSll?.ToString("N0") ?? "—") SLL</td>
+                        <td>@s.Notes</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        }
+    </div>
+}

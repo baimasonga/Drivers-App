@@ -1,0 +1,85 @@
+@page "/admin/chat/{room?}"
+@{
+    ViewData["Title"] = "Dispatch chat";
+    var room = RouteData.Values["room"]?.ToString() ?? "ops";
+}
+<p class="muted small">Real-time chat with active drivers. Room: <code>@room</code>. <a href="/admin/chat/ops">ops</a> · Use <code>trip-{id}</code> to chat with a specific trip's driver.</p>
+
+<div class="card" style="display:flex;flex-direction:column;height:65vh;padding:0">
+    <div id="chat-scroll" style="flex:1;overflow-y:auto;padding:16px"></div>
+    <div style="display:flex;gap:8px;padding:12px;border-top:1px solid var(--border)">
+        <input id="draft" class="input" placeholder="Type a message…" style="flex:1" />
+        <button class="btn btn-primary" id="send-btn">Send</button>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Login first to authenticate</h3>
+    <form id="login-form">
+        <div class="field"><label>Email</label><input class="input" id="email" value="fleet@avdp.sl" /></div>
+        <div class="field"><label>Password</label><input class="input" id="pw" type="password" value="fleet123" /></div>
+        <button class="btn btn-primary" type="submit">Sign in &amp; connect</button>
+        <span id="login-status" class="muted small" style="margin-left:12px"></span>
+    </form>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+<script>
+    const ROOM = '@room';
+    let token, conn, myUserId;
+
+    document.getElementById('login-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const r = await fetch('/api/auth/login', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: document.getElementById('email').value, password: document.getElementById('pw').value })
+        });
+        if (!r.ok) { document.getElementById('login-status').textContent = 'Login failed'; return; }
+        const d = await r.json();
+        token = d.token; myUserId = d.userId;
+        document.getElementById('login-status').textContent = 'Connected as ' + d.fullName;
+        await loadHistory();
+        await connect();
+    });
+
+    async function loadHistory() {
+        const r = await fetch('/api/chat/rooms/' + ROOM + '/messages', { headers: { 'Authorization': 'Bearer ' + token } });
+        const msgs = await r.json();
+        const box = document.getElementById('chat-scroll');
+        box.innerHTML = '';
+        msgs.forEach(m => append(m));
+    }
+
+    async function connect() {
+        conn = new signalR.HubConnectionBuilder()
+            .withUrl('/hubs/chat', { accessTokenFactory: () => token })
+            .withAutomaticReconnect()
+            .build();
+        conn.on('messageReceived', m => { if (m.room === ROOM) append(m); });
+        await conn.start();
+        await conn.invoke('JoinRoom', ROOM);
+    }
+
+    function append(m) {
+        const mine = m.senderUserId === myUserId;
+        const box = document.getElementById('chat-scroll');
+        const wrap = document.createElement('div');
+        wrap.style.cssText = 'display:flex;flex-direction:column;align-items:' + (mine ? 'flex-end' : 'flex-start') + ';margin-bottom:10px';
+        wrap.innerHTML = `
+            <div style="background:${mine?'var(--primary)':'#f1f5f9'};color:${mine?'white':'var(--text)'};padding:8px 12px;border-radius:10px;max-width:75%;font-size:14px">${esc(m.body)}</div>
+            <div class="muted" style="font-size:11px;margin-top:2px">${esc(m.senderName)} · ${esc(m.senderRole)} · ${new Date(m.sentAt).toLocaleTimeString()}</div>`;
+        box.appendChild(wrap);
+        box.scrollTop = box.scrollHeight;
+    }
+
+    document.getElementById('send-btn').addEventListener('click', send);
+    document.getElementById('draft').addEventListener('keyup', e => { if (e.key === 'Enter') send(); });
+    async function send() {
+        if (!conn) return alert('Sign in first');
+        const v = document.getElementById('draft').value.trim();
+        if (!v) return;
+        await conn.invoke('Send', ROOM, v);
+        document.getElementById('draft').value = '';
+    }
+    function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+</script>

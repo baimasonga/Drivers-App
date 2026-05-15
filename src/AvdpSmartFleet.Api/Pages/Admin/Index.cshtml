@@ -51,6 +51,13 @@
         <div class="value">@Model.KmMonth.ToString("N0") <span style="font-size:14px;color:var(--text-muted)">km</span></div>
         <div class="kpi-icon"><svg class="ico" viewBox="0 0 24 24"><path d="M3 13l2-6h14l2 6v6h-4v-2H7v2H3z"/></svg></div>
     </div>
+    <a class="kpi" href="/admin/maintenance" style="text-decoration:none;color:inherit">
+        <div class="label">Vehicles needing service</div>
+        <div class="value">@Model.VehiclesNeedingAttention</div>
+        <div class="kpi-icon" style="background:var(--warning-bg);color:var(--warning)">
+            <svg class="ico" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 105.6 5.6L18 14l4 4-3 3-4-4-2.1 2.3a6 6 0 11-8.5-8.5l4.2-4.2a4 4 0 015.6 0z"/></svg>
+        </div>
+    </a>
 </div>
 
 <div class="card">

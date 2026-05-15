@@ -2,35 +2,92 @@
 @attribute [Authorize]
 @inject ApiClient Api
 @inject OfflineQueue Queue
+@inject GeolocationService Geo
+@inject AuthState Auth
 
-<PageTitle>My trips</PageTitle>
+<PageTitle>AVDP Driver</PageTitle>
 
-<div class="row between" style="display:flex;justify-content:space-between;align-items:center">
-    <h1 style="margin-bottom:0">My trips</h1>
-    <a href="/scorecard" class="btn" style="width:auto;padding:8px 12px;font-size:13px;text-decoration:none">📊 Scorecard</a>
+<div class="hero">
+    <div class="hero-greet">
+        <div class="hello">Hello,</div>
+        <div class="name">@(Auth.UserName ?? "Driver")</div>
+    </div>
+    <div class="hero-time">@DateTime.Now.ToString("ddd, dd MMM")</div>
 </div>
-<p class="muted small">Your assigned trips appear below.</p>
 
 @if (pending > 0)
 {
     <div class="banner warn">
-        <span>@pending log(s) queued for sync</span>
+        <span>📤 @pending log(s) queued for sync</span>
         <button class="link" @onclick="Flush">Sync now</button>
     </div>
 }
 @if (queryCount > 0)
 {
     <a class="banner danger" href="/queries" style="text-decoration:none;color:inherit">
-        <span>@queryCount query(s) from Fleet awaiting response</span>
+        <span>⚠️ @queryCount query(s) from Fleet awaiting your response</span>
         <span>→</span>
     </a>
 }
+@if (nearbyAlerts != null && nearbyAlerts.Count > 0)
+{
+    <div class="banner warn" style="display:block">
+        <strong>⚠️ @nearbyAlerts.Count road alert(s) near you</strong>
+        <div style="margin-top:6px;font-size:13px">
+            @foreach (var a in nearbyAlerts.Take(3))
+            {
+                <div>@IconFor(a.Type) @a.Type — @(a.Notes ?? "") <span class="muted small">(@a.Severity)</span></div>
+            }
+            @if (nearbyAlerts.Count > 3)
+            {
+                <div class="muted small">+ @(nearbyAlerts.Count - 3) more</div>
+            }
+        </div>
+    </div>
+}
+
+<div class="tile-grid">
+    <a class="tile" href="/scorecard">
+        <div class="tile-icon" style="background:#dcfce7;color:#15803d">📊</div>
+        <div>
+            <div class="tile-title">My scorecard</div>
+            <div class="tile-sub">Compliance, badges &amp; tips</div>
+        </div>
+    </a>
+    <a class="tile" href="/queries">
+        <div class="tile-icon" style="background:@(queryCount > 0 ? "#fee2e2" : "#e0f2fe");color:@(queryCount > 0 ? "#dc2626" : "#0284c7")">💬</div>
+        <div>
+            <div class="tile-title">Queries @(queryCount > 0 ? "(" + queryCount + ")" : "")</div>
+            <div class="tile-sub">Respond to Fleet</div>
+        </div>
+    </a>
+    <a class="tile" href="/report-alert">
+        <div class="tile-icon" style="background:#fef3c7;color:#d97706">⚠️</div>
+        <div>
+            <div class="tile-title">Report alert</div>
+            <div class="tile-sub">Pothole, roadblock, flood…</div>
+        </div>
+    </a>
+    @if (trips != null && trips.Count > 0)
+    {
+        <a class="tile" href="@($"/trips/{trips[0].Id}/pre-departure")">
+            <div class="tile-icon" style="background:#f0fdf4;color:#15803d">✅</div>
+            <div>
+                <div class="tile-title">Pre-departure</div>
+                <div class="tile-sub">Checklist + odometer OCR</div>
+            </div>
+        </a>
+    }
+</div>
+
+<h2 style="margin-top:20px">🚛 Active assignments</h2>
 
 @if (trips == null) { <p class="muted">Loading…</p> }
 else if (trips.Count == 0)
 {
     <div class="card" style="text-align:center; padding:32px 20px">
-        <p class="muted" style="margin:0">No active assignments right now.</p>
+        <p class="muted" style="margin:0">No active trips right now.</p>
+        <p class="muted small" style="margin-top:6px">When Fleet assigns a trip to you, it will appear here.</p>
     </div>
 }
 else
@@ -38,19 +95,47 @@ else
     @foreach (var t in trips)
     {
         <a class="trip-card" href="@($"/trips/{t.Id}")">
-            <div class="trip-code">@t.RequestCode</div>
-            <div class="trip-purpose">@t.Purpose</div>
-            <div class="trip-meta">@t.Vehicle · @(t.Destination ?? "—")</div>
-            <div class="trip-times">@t.PlannedDeparture.ToString("ddd dd MMM, HH:mm") → @t.PlannedReturn.ToString("HH:mm")</div>
-            <span class="badge">@t.Status</span>
+            <div style="display:flex;justify-content:space-between;align-items:start">
+                <div style="flex:1">
+                    <div class="trip-code">@t.RequestCode</div>
+                    <div class="trip-purpose">@t.Purpose</div>
+                    <div class="trip-meta">@t.Vehicle · @(t.Destination ?? "—")</div>
+                    <div class="trip-times">@t.PlannedDeparture.ToString("ddd dd MMM, HH:mm") → @t.PlannedReturn.ToString("HH:mm")</div>
+                </div>
+                <span class="badge">@t.Status</span>
+            </div>
         </a>
     }
 }
+
+<style>
+    .hero {
+        background: linear-gradient(135deg, #15803d 0%, #0f3d18 100%);
+        color: white;
+        padding: 20px 20px 24px;
+        margin: -16px -16px 16px;
+        border-bottom-left-radius: 20px;
+        border-bottom-right-radius: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+    }
+    .hero-greet .hello { font-size: 13px; opacity: 0.85; }
+    .hero-greet .name { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+    .hero-time { font-size: 12px; opacity: 0.85; }
+    .tile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0 20px; }
+    .tile { display: flex; align-items: center; gap: 12px; padding: 14px; background: white; border: 1px solid var(--border); border-radius: 14px; text-decoration: none; color: inherit; box-shadow: var(--shadow-sm); transition: transform 0.1s; }
+    .tile:active { transform: scale(0.98); }
+    .tile-icon { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; font-size: 20px; flex-shrink: 0; }
+    .tile-title { font-weight: 600; font-size: 14px; color: var(--text); }
+    .tile-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+</style>
 
 @code {
     List<TripAssignment>? trips;
     int pending;
     int queryCount;
+    List<RoadAlertDto>? nearbyAlerts;
 
     protected override async Task OnInitializedAsync()
     {
@@ -58,6 +143,10 @@ else
         pending = await Queue.PendingCountAsync();
         var qs = await Api.GetMyQueriesAsync();
         queryCount = qs?.Count(q => q.Status == "Open") ?? 0;
+        var pos = await Geo.GetCurrentAsync();
+        nearbyAlerts = pos != null
+            ? await Api.GetActiveAlertsAsync(pos.Lat, pos.Lng, 30)
+            : await Api.GetActiveAlertsAsync();
     }
 
     async Task Flush()
@@ -66,4 +155,15 @@ else
         pending = await Queue.PendingCountAsync();
         trips = await Api.GetMyAssignmentsAsync();
     }
+
+    string IconFor(string type) => type switch
+    {
+        "Pothole" => "🕳️",
+        "Roadblock" => "🚧",
+        "Flood" => "🌊",
+        "Accident" => "💥",
+        "Checkpoint" => "👮",
+        "FuelShortage" => "⛽",
+        _ => "⚠️"
+    };
 }

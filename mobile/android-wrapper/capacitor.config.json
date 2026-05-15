@@ -1,0 +1,29 @@
+{
+  "appId": "sl.avdp.smartfleet.driver",
+  "appName": "AVDP Driver",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https",
+    "cleartext": false
+  },
+  "android": {
+    "minWebViewVersion": 80,
+    "useLegacyBridge": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1500,
+      "backgroundColor": "#0f3d18",
+      "showSpinner": true,
+      "spinnerColor": "#ffffff",
+      "androidSplashResourceName": "splash"
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#0f3d18"
+    },
+    "Geolocation": {
+      "permissions": ["location"]
+    }
+  }
+}

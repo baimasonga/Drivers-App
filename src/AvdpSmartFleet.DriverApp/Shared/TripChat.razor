@@ -1,0 +1,126 @@
+@using Microsoft.AspNetCore.SignalR.Client
+@implements IAsyncDisposable
+@inject AuthState Auth
+@inject AppConfig Config
+@inject HttpClient Http
+
+<div class="card" style="padding:0;display:flex;flex-direction:column;height:380px">
+    <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+        <strong>💬 Chat with Fleet</strong>
+        <span class="muted small">@(connected ? "● live" : "○ offline")</span>
+    </div>
+    <div id="chat-scroll" style="flex:1;overflow-y:auto;padding:12px 16px">
+        @if (messages.Count == 0) { <p class="muted small">No messages yet. Say hello to dispatch.</p> }
+        @foreach (var m in messages)
+        {
+            bool mine = m.SenderUserId.ToString() == myId;
+            <div style="margin-bottom:10px;display:flex;flex-direction:column;align-items:@(mine ? "flex-end" : "flex-start")">
+                <div style="background:@(mine ? "var(--primary)" : "#f1f5f9");
+                            color:@(mine ? "white" : "var(--text)");
+                            padding:8px 12px;border-radius:10px;max-width:80%;font-size:14px">
+                    @m.Body
+                </div>
+                <div class="muted" style="font-size:11px;margin-top:2px">
+                    @m.SenderName · @m.SenderRole · @m.SentAt.ToLocalTime().ToString("HH:mm")
+                </div>
+            </div>
+        }
+    </div>
+    <div style="display:flex;gap:6px;padding:10px;border-top:1px solid var(--border)">
+        <input class="input" @bind="draft" @bind:event="oninput"
+               @onkeyup="@(async e => { if (e.Key == "Enter") await SendAsync(); })"
+               placeholder="Type a message…" style="flex:1" />
+        <button class="btn primary" style="width:auto;padding:10px 14px"
+                @onclick="SendAsync" disabled="@(!connected || string.IsNullOrWhiteSpace(draft))">Send</button>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Room { get; set; } = "ops";
+
+    record Msg(int Id, string Room, int SenderUserId, string SenderName, string SenderRole, string Body, DateTime SentAt);
+
+    HubConnection? _hub;
+    List<Msg> messages = new();
+    string? draft;
+    bool connected;
+    string? myId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        myId = Auth.Token == null ? null : ExtractSub(Auth.Token);
+
+        // History via REST
+        try
+        {
+            var hist = await Http.GetFromJsonAsync<List<Msg>>($"api/chat/rooms/{Room}/messages");
+            if (hist != null) messages = hist;
+        }
+        catch { }
+
+        // SignalR live connection
+        var hubUrl = (Config.ApiBaseUrl.TrimEnd('/')) + "/hubs/chat";
+        _hub = new HubConnectionBuilder()
+            .WithUrl(hubUrl, opts => { opts.AccessTokenProvider = () => Task.FromResult<string?>(Auth.Token); })
+            .WithAutomaticReconnect()
+            .Build();
+
+        _hub.On<Msg>("messageReceived", async m =>
+        {
+            if (m.Room != Room) return;
+            messages.Add(m);
+            await InvokeAsync(StateHasChanged);
+        });
+        _hub.Reconnected += async _ =>
+        {
+            await _hub.InvokeAsync("JoinRoom", Room);
+            await InvokeAsync(() => { connected = true; StateHasChanged(); });
+        };
+        _hub.Closed += async _ =>
+        {
+            await InvokeAsync(() => { connected = false; StateHasChanged(); });
+        };
+        try
+        {
+            await _hub.StartAsync();
+            await _hub.InvokeAsync("JoinRoom", Room);
+            connected = true;
+        }
+        catch
+        {
+            connected = false;
+        }
+    }
+
+    async Task SendAsync()
+    {
+        if (_hub == null || string.IsNullOrWhiteSpace(draft)) return;
+        try
+        {
+            await _hub.InvokeAsync("Send", Room, draft);
+            draft = "";
+        }
+        catch { }
+    }
+
+    static string? ExtractSub(string jwt)
+    {
+        try
+        {
+            var parts = jwt.Split('.');
+            if (parts.Length < 2) return null;
+            var payload = parts[1].PadRight(parts[1].Length + (4 - parts[1].Length % 4) % 4, '=')
+                .Replace('-', '+').Replace('_', '/');
+            var bytes = Convert.FromBase64String(payload);
+            using var doc = System.Text.Json.JsonDocument.Parse(bytes);
+            if (doc.RootElement.TryGetProperty("sub", out var s)) return s.GetString();
+        }
+        catch { }
+        return null;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_hub != null) await _hub.DisposeAsync();
+    }
+}

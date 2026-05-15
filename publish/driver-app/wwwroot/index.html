@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#1b6e2a" />
+    <title>AVDP Driver</title>
+    <base href="/" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="css/app.css" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link href="manifest.webmanifest" rel="manifest" />
+    <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png" />
+</head>
+<body>
+    <div id="app">
+        <svg class="loading-progress">
+            <circle r="40%" cx="50%" cy="50%" />
+            <circle r="40%" cx="50%" cy="50%" />
+        </svg>
+        <div class="loading-progress-text"></div>
+    </div>
+
+    <div id="blazor-error-ui">
+        An unhandled error has occurred.
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">×</a>
+    </div>
+    <script>
+        // ===== Odometer OCR using Tesseract.js =====
+        // Lazy-loaded so it doesn't bloat first paint
+        window.avdpOcr = {
+            _ready: null,
+            _loadTesseract: function () {
+                if (this._ready) return this._ready;
+                this._ready = new Promise((resolve, reject) => {
+                    const s = document.createElement('script');
+                    s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.0.4/dist/tesseract.min.js';
+                    s.onload = () => resolve(window.Tesseract);
+                    s.onerror = () => reject(new Error('Failed to load OCR engine'));
+                    document.head.appendChild(s);
+                });
+                return this._ready;
+            },
+            extractDigits: async function (imageUrl) {
+                const Tess = await this._loadTesseract();
+                const { data } = await Tess.recognize(imageUrl, 'eng', {
+                    tessedit_char_whitelist: '0123456789',
+                });
+                // Pick the longest 4-7 digit run — typical odometer length
+                const matches = (data.text || '').match(/\d{4,7}/g) || [];
+                if (matches.length === 0) return null;
+                matches.sort((a, b) => b.length - a.length);
+                return parseInt(matches[0], 10);
+            }
+        };
+
+        // Voice dictation using Web Speech API
+        window.avdpVoice = {
+            _rec: null,
+            start: function (dotnetRef) {
+                const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!Recognition) { dotnetRef.invokeMethodAsync('OnVoiceError', 'Voice recognition not supported on this device'); return; }
+                const rec = new Recognition();
+                rec.lang = navigator.language || 'en-US';
+                rec.interimResults = true;
+                rec.continuous = false;
+                rec.onresult = (e) => {
+                    let txt = '';
+                    for (let i = e.resultIndex; i < e.results.length; i++) txt += e.results[i][0].transcript;
+                    dotnetRef.invokeMethodAsync('OnVoiceText', txt, e.results[e.results.length - 1].isFinal);
+                };
+                rec.onerror = (e) => dotnetRef.invokeMethodAsync('OnVoiceError', e.error || 'recognition error');
+                rec.onend = () => dotnetRef.invokeMethodAsync('OnVoiceEnd');
+                rec.start();
+                this._rec = rec;
+            },
+            stop: function () { if (this._rec) { this._rec.stop(); this._rec = null; } }
+        };
+
+        window.getCurrentPosition = () => new Promise((resolve) => {
+            if (!navigator.geolocation) return resolve(null);
+            navigator.geolocation.getCurrentPosition(
+                p => resolve({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy }),
+                _ => resolve(null),
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+            );
+        });
+    </script>
+    <script src="_framework/blazor.webassembly.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('service-worker.js');
+    </script>
+</body>
+</html>

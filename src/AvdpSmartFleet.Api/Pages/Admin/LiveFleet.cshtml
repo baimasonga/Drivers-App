@@ -23,14 +23,37 @@
 .v-marker.stale { background: #d97706; }
 .v-marker.alert { background: #dc2626; animation: pulse 1.5s infinite; }
 @@keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+.alert-pin { width: 28px; height: 28px; border-radius: 8px; background: #fef3c7; color: #92400e; display: grid; place-items: center; font-size: 16px; border: 2px solid #d97706; box-shadow: 0 2px 6px rgba(0,0,0,0.25); }
+.alert-pin.sev-low { background: #fef3c7; border-color: #d97706; }
+.alert-pin.sev-medium { background: #fed7aa; border-color: #ea580c; }
+.alert-pin.sev-high { background: #fecaca; border-color: #dc2626; }
 </style>
 <script>
-    let map, markers = {};
+    let map, markers = {}, alertMarkers = {};
+    const ICONS = { Pothole: '🕳️', Roadblock: '🚧', Flood: '🌊', Accident: '💥', Checkpoint: '👮', FuelShortage: '⛽', Other: '⚠️' };
     function init() {
         map = L.map('map').setView([8.4844, -13.2344], 7);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap' }).addTo(map);
         refresh();
+        refreshAlerts();
         setInterval(refresh, 30000);
+        setInterval(refreshAlerts, 60000);
+    }
+    async function refreshAlerts() {
+        const r = await fetch('/api/road-alerts/active');
+        const alerts = await r.json();
+        const seen = new Set(alerts.map(a => a.id));
+        Object.keys(alertMarkers).forEach(id => { if (!seen.has(+id)) { map.removeLayer(alertMarkers[id]); delete alertMarkers[id]; } });
+        alerts.forEach(a => {
+            const icon = L.divIcon({
+                html: `<div class="alert-pin sev-${a.severity.toLowerCase()}">${ICONS[a.type] || '⚠️'}</div>`,
+                className: '', iconSize: [28, 28]
+            });
+            const popup = `<strong>${ICONS[a.type]||''} ${a.type}</strong> · ${a.severity}<br/>${a.notes || ''}<br/>
+                <span class="muted">${a.confirmationsStillThere} confirm · ${a.confirmationsCleared} cleared · confidence ${(a.confidence*100).toFixed(0)}%</span>`;
+            if (alertMarkers[a.id]) { alertMarkers[a.id].setLatLng([a.lat, a.lng]).setPopupContent(popup); }
+            else { alertMarkers[a.id] = L.marker([a.lat, a.lng], { icon }).addTo(map).bindPopup(popup); }
+        });
     }
     async function refresh() {
         const r = await fetch('/api/map/live');

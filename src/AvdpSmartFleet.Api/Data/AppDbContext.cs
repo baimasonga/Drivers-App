@@ -19,6 +19,10 @@ public class AppDbContext : DbContext
     public DbSet<TripException> TripExceptions => Set<TripException>();
     public DbSet<UnauthorizedMovement> UnauthorizedMovements => Set<UnauthorizedMovement>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<RoadAlert> RoadAlerts => Set<RoadAlert>();
+    public DbSet<RoadAlertConfirmation> RoadAlertConfirmations => Set<RoadAlertConfirmation>();
+    public DbSet<ServiceRecord> ServiceRecords => Set<ServiceRecord>();
+    public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {

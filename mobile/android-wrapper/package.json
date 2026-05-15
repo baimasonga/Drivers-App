@@ -1,0 +1,26 @@
+{
+  "name": "avdp-smartfleet-driver-android",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AVDP SmartFleet driver app — Android wrapper built with Capacitor",
+  "scripts": {
+    "publish-pwa": "dotnet publish ../../src/AvdpSmartFleet.DriverApp/AvdpSmartFleet.DriverApp.csproj -c Release -o ../../publish/driver-app",
+    "copy-wwwroot": "node copy-wwwroot.js",
+    "build": "npm run publish-pwa && npm run copy-wwwroot && npx cap sync android",
+    "open": "npx cap open android",
+    "android": "npm run build && npx cap run android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/core": "^6.1.2",
+    "@capacitor/geolocation": "^6.0.1",
+    "@capacitor/camera": "^6.0.2",
+    "@capacitor/network": "^6.0.2",
+    "@capacitor/push-notifications": "^6.0.2",
+    "@capacitor/splash-screen": "^6.0.2",
+    "@capacitor/status-bar": "^6.0.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.2"
+  }
+}

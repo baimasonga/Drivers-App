@@ -1,0 +1,43 @@
+@page "/admin/maintenance"
+@model AvdpSmartFleet.Api.Pages.Admin.MaintenanceModel
+@{ ViewData["Title"] = "Maintenance"; }
+
+<p class="muted small">Predictive vehicle health monitoring · service intervals + recent driver-reported issues</p>
+
+<div class="kpis">
+    <div class="kpi"><div class="label">Healthy</div><div class="value" style="color:var(--success)">@Model.HealthyCount</div></div>
+    <div class="kpi"><div class="label">Service due</div><div class="value" style="color:var(--warning)">@Model.DueCount</div></div>
+    <div class="kpi"><div class="label">Overdue</div><div class="value" style="color:var(--danger)">@Model.OverdueCount</div></div>
+    <div class="kpi"><div class="label">Repeated issues</div><div class="value" style="color:var(--danger)">@Model.IssueCount</div></div>
+    <div class="kpi"><div class="label">Grounded</div><div class="value">@Model.GroundedCount</div></div>
+</div>
+
+<div class="card" style="padding:0">
+    <table>
+        <thead><tr><th>Plate</th><th>Status</th><th>Last service</th><th>Km since</th><th>Km until</th><th>Recent issues</th><th>Recommendation</th><th></th></tr></thead>
+        <tbody>
+        @foreach (var h in Model.Items)
+        {
+            string sb = h.Status switch
+            {
+                AvdpSmartFleet.Api.Domain.HealthStatus.Healthy => "success",
+                AvdpSmartFleet.Api.Domain.HealthStatus.ServiceDue => "warn",
+                AvdpSmartFleet.Api.Domain.HealthStatus.Overdue or AvdpSmartFleet.Api.Domain.HealthStatus.RepeatedIssues or AvdpSmartFleet.Api.Domain.HealthStatus.Grounded => "danger",
+                _ => "neutral"
+            };
+            <tr>
+                <td><strong>@h.PlateNumber</strong></td>
+                <td><span class="badge @sb">@h.Status</span></td>
+                <td>@(h.LastServiceAt?.ToString("yyyy-MM-dd") ?? "—")</td>
+                <td>@(h.KmSinceService?.ToString("N0") ?? "—") km</td>
+                <td>@(h.KmUntilService?.ToString("N0") ?? "—") km</td>
+                <td>@h.RecentIssues</td>
+                <td>@h.Recommendation</td>
+                <td>
+                    <a class="btn btn-small btn-primary" href="/admin/maintenance/@h.VehicleId">Log service</a>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

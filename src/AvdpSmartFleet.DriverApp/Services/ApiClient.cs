@@ -18,6 +18,17 @@ public record UploadResult(string Url, long Size);
 
 public record ScorecardDto(int Id, string Name, int Trips, double AvgScore, double KmDriven, int OpenQueries, string Badge, int Streak);
 
+public record ReportAlertRequest(string Type, string Severity, double Lat, double Lng, string? Notes, string? PhotoUrl);
+
+public record RoadAlertDto(int Id, string Type, string Severity, double Lat, double Lng,
+    string? Notes, string? PhotoUrl, DateTime ReportedAt, DateTime ExpiresAt,
+    int ConfirmationsStillThere, int ConfirmationsCleared, double Confidence);
+
+public record ConfirmAlertRequest(string Vote, double? Lat, double? Lng);
+
+public record CoachingTipDto(string Kind, string Title, string Detail, double Evidence);
+public record CoachingDto(int DriverId, string Name, int TripsAnalysed, double AvgScore, string OverallVerdict, List<CoachingTipDto> Tips);
+
 public class ApiClient
 {
     private readonly HttpClient _http;
@@ -59,6 +70,33 @@ public class ApiClient
         var resp = await _http.PostAsJsonAsync($"api/exceptions/{exceptionId}/explain",
             new { explanation });
         return resp.IsSuccessStatusCode;
+    }
+
+    public async Task<List<RoadAlertDto>?> GetActiveAlertsAsync(double? lat = null, double? lng = null, double? radiusKm = null)
+    {
+        var q = "api/road-alerts/active";
+        if (lat.HasValue && lng.HasValue)
+            q += $"?lat={lat}&lng={lng}&radiusKm={radiusKm ?? 50}";
+        try { return await _http.GetFromJsonAsync<List<RoadAlertDto>>(q); }
+        catch { return null; }
+    }
+
+    public async Task<bool> ReportAlertAsync(ReportAlertRequest req)
+    {
+        var r = await _http.PostAsJsonAsync("api/road-alerts", req);
+        return r.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> ConfirmAlertAsync(int alertId, ConfirmAlertRequest req)
+    {
+        var r = await _http.PostAsJsonAsync($"api/road-alerts/{alertId}/confirm", req);
+        return r.IsSuccessStatusCode;
+    }
+
+    public async Task<CoachingDto?> GetMyCoachingAsync()
+    {
+        try { return await _http.GetFromJsonAsync<CoachingDto>("api/coaching/my"); }
+        catch { return null; }
     }
 
     public async Task<ScorecardDto?> GetMyScorecardAsync()

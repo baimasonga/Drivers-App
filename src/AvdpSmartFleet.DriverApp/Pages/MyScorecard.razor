@@ -46,8 +46,37 @@ else
     </div>
 }
 
+@if (coaching != null && coaching.Tips.Count > 0)
+{
+    <div class="card">
+        <h2>🤖 Insights for you</h2>
+        <p class="muted small">@coaching.OverallVerdict</p>
+        @foreach (var t in coaching.Tips)
+        {
+            <div style="border-left:3px solid @TipColor(t.Kind);padding:10px 12px;margin:10px 0;background:@TipBg(t.Kind);border-radius:6px">
+                <div style="font-weight:600;font-size:14px">@t.Title</div>
+                <div style="font-size:13px;margin-top:4px">@t.Detail</div>
+            </div>
+        }
+    </div>
+}
+
 @code {
     ScorecardDto? sc;
+    CoachingDto? coaching;
+
+    string TipColor(string kind) => kind switch
+    {
+        "Praise" => "var(--success)",
+        "Warning" => "var(--danger)",
+        _ => "var(--warning)"
+    };
+    string TipBg(string kind) => kind switch
+    {
+        "Praise" => "var(--success-bg)",
+        "Warning" => "var(--danger-bg)",
+        _ => "var(--warning-bg)"
+    };
     string BadgeClass => sc?.Badge switch
     {
         "Gold star" or "Excellent" => "success",
@@ -59,5 +88,6 @@ else
     protected override async Task OnInitializedAsync()
     {
         sc = await Api.GetMyScorecardAsync();
+        coaching = await Api.GetMyCoachingAsync();
     }
 }

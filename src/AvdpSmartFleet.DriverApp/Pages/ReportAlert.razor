@@ -1,0 +1,82 @@
+@page "/report-alert"
+@attribute [Authorize]
+@inject ApiClient Api
+@inject GeolocationService Geo
+@inject NavigationManager Nav
+@inject AppConfig Config
+
+<PageTitle>Report road condition</PageTitle>
+
+<h1>⚠️ Report road condition</h1>
+<p class="muted small">Warn other drivers about hazards on the road ahead.</p>
+
+<div class="card">
+    <div class="field">
+        <label>Type</label>
+        <div class="action-grid">
+            @foreach (var t in types)
+            {
+                <button type="button"
+                        class="btn @(selectedType == t.Value ? "primary" : "")"
+                        @onclick="@(() => selectedType = t.Value)">
+                    @t.Icon @t.Label
+                </button>
+            }
+        </div>
+    </div>
+
+    <div class="field">
+        <label>Severity</label>
+        <div class="action-grid" style="grid-template-columns:1fr 1fr 1fr">
+            <button type="button" class="btn @(selectedSeverity == "Low" ? "primary" : "")" @onclick='() => selectedSeverity = "Low"'>Low</button>
+            <button type="button" class="btn @(selectedSeverity == "Medium" ? "primary" : "")" @onclick='() => selectedSeverity = "Medium"'>Medium</button>
+            <button type="button" class="btn @(selectedSeverity == "High" ? "primary" : "")" @onclick='() => selectedSeverity = "High"'>High</button>
+        </div>
+    </div>
+
+    <VoiceInput Label="Notes (optional)" Value="@notes" ValueChanged="@(v => notes = v)" />
+
+    <PhotoCapture Label="Photo (optional)" BaseUrl="@Config.ApiBaseUrl" OnUploaded="@(u => photoUrl = u)" />
+
+    @if (!string.IsNullOrEmpty(message)) { <p class="status">@message</p> }
+    @if (!string.IsNullOrEmpty(error)) { <p class="error">@error</p> }
+
+    <button class="btn primary" @onclick="Submit" disabled="@(busy || string.IsNullOrEmpty(selectedType))">
+        @(busy ? "Posting to fleet…" : "Post alert")
+    </button>
+</div>
+
+@code {
+    record AlertType(string Icon, string Label, string Value);
+    AlertType[] types = new[]
+    {
+        new AlertType("🕳️", "Pothole", "Pothole"),
+        new AlertType("🚧", "Roadblock", "Roadblock"),
+        new AlertType("🌊", "Flood", "Flood"),
+        new AlertType("💥", "Accident", "Accident"),
+        new AlertType("👮", "Checkpoint", "Checkpoint"),
+        new AlertType("⛽", "Fuel out", "FuelShortage"),
+    };
+
+    string? selectedType;
+    string selectedSeverity = "Medium";
+    string? notes;
+    string? photoUrl;
+    string? message;
+    string? error;
+    bool busy;
+
+    async Task Submit()
+    {
+        busy = true; error = null; message = null;
+        var pos = await Geo.GetCurrentAsync();
+        if (pos == null) { error = "Could not get your GPS location. Move outdoors and try again."; busy = false; return; }
+        var ok = await Api.ReportAlertAsync(new ReportAlertRequest(
+            selectedType!, selectedSeverity, pos.Lat, pos.Lng, notes, photoUrl));
+        busy = false;
+        if (!ok) { error = "Could not post the alert. Try again when online."; return; }
+        message = "Alert posted ✓";
+        await Task.Delay(900);
+        Nav.NavigateTo("/");
+    }
+}

@@ -14,7 +14,7 @@
             <tbody>${rows.map(r => `
                 <tr>
                     <td><strong>${rankEmoji(r.rank)}</strong></td>
-                    <td><strong>${r.name}</strong></td>
+                    <td><a href="/admin/drivers/${r.id}/coaching"><strong>${r.name}</strong></a></td>
                     <td>${r.trips}</td>
                     <td>${r.avgScore > 0 ? r.avgScore + '%' : '—'}</td>
                     <td>${r.kmDriven.toFixed(0)} km</td>

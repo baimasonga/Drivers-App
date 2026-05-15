@@ -56,3 +56,10 @@ public enum ExceptionStatus { Open, UnderReview, Resolved, Escalated, Appealed }
 public enum GateAction { Exit, Entry }
 
 public enum VehicleStatus { Available, Assigned, InUse, Maintenance, OutOfService }
+
+public enum RoadAlertType { Pothole, Roadblock, Flood, Accident, Checkpoint, FuelShortage, Other }
+public enum AlertSeverity { Low, Medium, High }
+public enum AlertConfirmation { StillThere, Cleared }
+
+public enum ServiceType { OilChange, TyreChange, BrakeService, FullService, Repair, Inspection, Other }
+public enum HealthStatus { Healthy, ServiceDue, Overdue, RepeatedIssues, Grounded }

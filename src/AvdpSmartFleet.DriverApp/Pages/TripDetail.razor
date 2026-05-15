@@ -30,6 +30,9 @@ else
     {
         <p class="status">@message</p>
     }
+
+    <h2 style="margin-top:24px">Dispatch chat</h2>
+    <TripChat Room="@($"trip-{Id}")" />
 }
 
 @code {

@@ -52,13 +52,53 @@ public static class DbSeeder
         };
         db.Vehicles.AddRange(vehicle, vehicle2);
 
-        db.Geofences.AddRange(
-            new Geofence { Name = "AVDP HQ Freetown", Category = "Office", CenterLat = 8.4844, CenterLng = -13.2344, RadiusMeters = 200 },
-            new Geofence { Name = "Kambia District Office", Category = "Office", CenterLat = 9.1267, CenterLng = -12.9181, RadiusMeters = 300 },
-            new Geofence { Name = "Bo Field Office", Category = "Office", CenterLat = 7.9626, CenterLng = -11.7383, RadiusMeters = 300 },
-            new Geofence { Name = "Kenema Warehouse", Category = "Warehouse", CenterLat = 7.8767, CenterLng = -11.1875, RadiusMeters = 250 },
-            new Geofence { Name = "Port Loko Fuel Station", Category = "FuelStation", CenterLat = 8.7667, CenterLng = -12.7833, RadiusMeters = 100 }
-        );
+        var hq = new Geofence { Name = "AVDP HQ Freetown", Category = "Office", CenterLat = 8.4844, CenterLng = -13.2344, RadiusMeters = 200 };
+        var kambia = new Geofence { Name = "Kambia District Office", Category = "Office", CenterLat = 9.1267, CenterLng = -12.9181, RadiusMeters = 300 };
+        var bo = new Geofence { Name = "Bo Field Office", Category = "Office", CenterLat = 7.9626, CenterLng = -11.7383, RadiusMeters = 300 };
+        var kenema = new Geofence { Name = "Kenema Warehouse", Category = "Warehouse", CenterLat = 7.8767, CenterLng = -11.1875, RadiusMeters = 250 };
+        var portLoko = new Geofence { Name = "Port Loko Fuel Station", Category = "FuelStation", CenterLat = 8.7667, CenterLng = -12.7833, RadiusMeters = 100 };
+        db.Geofences.AddRange(hq, kambia, bo, kenema, portLoko);
+        await db.SaveChangesAsync();
+
+        // ── Seed an active demo trip for the driver so the PWA isn't empty ──
+        var activeTrip = new TravelRequest
+        {
+            RequestCode = $"AVDP-TRIP-{DateTime.UtcNow.Year}-0001",
+            RequesterId = requester.Id,
+            Department = requester.Department,
+            Purpose = "Field monitoring visit to Kambia IVS sites",
+            RequestedVehicleType = "Pickup",
+            DestinationDistrict = "Kambia",
+            DestinationGeofenceId = kambia.Id,
+            PlannedDeparture = DateTime.UtcNow.AddHours(-1),
+            PlannedReturn = DateTime.UtcNow.AddHours(7),
+            Priority = Priority.Normal,
+            Status = TripStatus.ApprovedForDispatch,
+            AssignedVehicleId = vehicle.Id,
+            AssignedDriverId = driver.Id,
+            ApprovedById = manager.Id,
+            ApprovedAt = DateTime.UtcNow.AddMinutes(-30),
+            CreatedAt = DateTime.UtcNow.AddHours(-2)
+        };
+
+        // A second trip pending review so requesters/officers have a workflow demo
+        var pendingTrip = new TravelRequest
+        {
+            RequestCode = $"AVDP-TRIP-{DateTime.UtcNow.Year}-0002",
+            RequesterId = requester.Id,
+            Department = requester.Department,
+            Purpose = "Quarterly procurement run to Bo Field Office",
+            RequestedVehicleType = "SUV",
+            DestinationDistrict = "Bo",
+            DestinationGeofenceId = bo.Id,
+            PlannedDeparture = DateTime.UtcNow.AddDays(1),
+            PlannedReturn = DateTime.UtcNow.AddDays(1).AddHours(8),
+            Priority = Priority.Normal,
+            Status = TripStatus.PendingFleetReview,
+            CreatedAt = DateTime.UtcNow.AddHours(-1)
+        };
+
+        db.TravelRequests.AddRange(activeTrip, pendingTrip);
         await db.SaveChangesAsync();
     }
 }
